@@ -16,7 +16,7 @@ erDiagram
     Customer ||--o{ Device : owns
     Customer ||--o{ RepairTicket : requests
     Device ||--o{ RepairTicket : repaired_in
-    User ||--o{ RepairTicket : assignee
+    User ||--o{ RepairTicket : assigned_to
     RepairTicket ||--o{ TicketStatusHistory : logs
     RepairTicket ||--o{ Diagnosis : has
     RepairTicket ||--o{ Estimate : has
@@ -25,8 +25,8 @@ erDiagram
     RepairTicket ||--o{ Invoice : bills
     Invoice ||--o{ InvoiceItem : contains
     Invoice ||--o{ PaymentRecord : tracks
-    RepairTicket ||--o{ Attachment : binds
-    User ||--o{ AuditLog : acts
+    RepairTicket ||--o{ Attachment : contains
+    User ||--o{ AuditLog : creates
 ```
 
 ---
