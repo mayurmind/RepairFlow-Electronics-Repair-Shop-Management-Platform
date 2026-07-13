@@ -16,10 +16,12 @@ import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { TicketStatus, TicketPriority } from "@repairflow/shared-types";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 
+import { BranchAccessGuard } from "../common/guards/branch.guard";
+
 @ApiTags("Repair Tickets")
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Controller("repair-tickets")
+@UseGuards(JwtAuthGuard, RolesGuard, BranchAccessGuard)
+@Controller("tickets")
 export class RepairTicketsController {
   constructor(private readonly ticketsService: RepairTicketsService) {}
 

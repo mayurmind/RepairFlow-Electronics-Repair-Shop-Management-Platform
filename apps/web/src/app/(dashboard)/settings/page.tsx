@@ -1,35 +1,39 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
-import { Cpu, Loader2, Save, AlertCircle } from 'lucide-react';
-import { Toaster, toast } from 'sonner';
+import React from "react";
+import { useForm } from "react-hook-form";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+import { Cpu, Loader2, Save, AlertCircle } from "lucide-react";
+import { Toaster, toast } from "sonner";
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
 
-  const { data: settingsRes, isLoading, error } = useQuery({
-    queryKey: ['systemSettings'],
+  const {
+    data: settingsRes,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["systemSettings"],
     queryFn: async () => {
-      const res: any = await apiClient.get('/settings');
+      const res: any = await apiClient.get("/settings");
       return res.data;
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: async (newData: any) => {
-      const res: any = await apiClient.patch('/settings', newData);
+      const res: any = await apiClient.patch("/settings", newData);
       return res.data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(['systemSettings'], data);
-      toast.success('System settings saved successfully!');
+      queryClient.setQueryData(["systemSettings"], data);
+      toast.success("System settings saved successfully!");
     },
     onError: (err: any) => {
       console.error(err);
-      toast.error(err.message || 'Failed to update system settings.');
+      toast.error(err.message || "Failed to update system settings.");
     },
   });
 
@@ -55,7 +59,9 @@ export default function SettingsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        <span className="text-sm text-slate-500 font-medium">Fetching settings...</span>
+        <span className="text-sm text-slate-500 font-medium">
+          Fetching settings...
+        </span>
       </div>
     );
   }
@@ -66,7 +72,9 @@ export default function SettingsPage() {
         <AlertCircle className="w-5 h-5 shrink-0 text-red-500 mt-0.5" />
         <div>
           <h4 className="font-bold">Error Loading Settings</h4>
-          <p className="text-xs mt-1">{(error as any).message || 'Failed to fetch global settings.'}</p>
+          <p className="text-xs mt-1">
+            {(error as any).message || "Failed to fetch global settings."}
+          </p>
         </div>
       </div>
     );
@@ -78,9 +86,12 @@ export default function SettingsPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 font-outfit">System Settings</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 font-outfit">
+          System Settings
+        </h1>
         <p className="text-sm text-slate-500 mt-1">
-          Configure business profile details, tax calculations, and customer receipt terms.
+          Configure business profile details, tax calculations, and customer
+          receipt terms.
         </p>
       </div>
 
@@ -97,7 +108,7 @@ export default function SettingsPage() {
               </label>
               <input
                 type="text"
-                {...register('companyName', { required: true })}
+                {...register("companyName", { required: true })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               />
             </div>
@@ -108,7 +119,7 @@ export default function SettingsPage() {
               </label>
               <input
                 type="text"
-                {...register('currency', { required: true })}
+                {...register("currency", { required: true })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               />
             </div>
@@ -119,7 +130,7 @@ export default function SettingsPage() {
               </label>
               <input
                 type="text"
-                {...register('phone')}
+                {...register("phone")}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               />
             </div>
@@ -130,7 +141,7 @@ export default function SettingsPage() {
               </label>
               <input
                 type="email"
-                {...register('email')}
+                {...register("email")}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               />
             </div>
@@ -150,7 +161,7 @@ export default function SettingsPage() {
               <input
                 type="number"
                 step="0.01"
-                {...register('taxRate', { required: true })}
+                {...register("taxRate", { required: true })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
               />
             </div>
@@ -168,7 +179,7 @@ export default function SettingsPage() {
             </label>
             <textarea
               rows={4}
-              {...register('termsAndConditions')}
+              {...register("termsAndConditions")}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white resize-none"
             />
           </div>

@@ -1,46 +1,59 @@
 // User Roles
-export type UserRole = 'SYSTEM_ADMIN' | 'OWNER' | 'BRANCH_MANAGER' | 'FRONT_DESK' | 'TECHNICIAN';
+export type UserRole =
+  "SYSTEM_ADMIN" | "OWNER" | "BRANCH_MANAGER" | "FRONT_DESK" | "TECHNICIAN";
 
 // User Status
-export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'INVITED' | 'DISABLED';
+export type UserStatus = "ACTIVE" | "SUSPENDED" | "INVITED" | "DISABLED";
 
 // Repair Ticket Status
 export type TicketStatus =
-  | 'RECEIVED'
-  | 'DIAGNOSING'
-  | 'WAITING_FOR_APPROVAL'
-  | 'APPROVED'
-  | 'REPAIR_IN_PROGRESS'
-  | 'READY_FOR_COLLECTION'
-  | 'DELIVERED'
-  | 'REJECTED'
-  | 'UNREPAIRABLE'
-  | 'PARTS_REQUIRED'
-  | 'CANCELLED';
+  | "RECEIVED"
+  | "DIAGNOSING"
+  | "WAITING_FOR_APPROVAL"
+  | "APPROVED"
+  | "REPAIR_IN_PROGRESS"
+  | "READY_FOR_COLLECTION"
+  | "DELIVERED"
+  | "REJECTED"
+  | "UNREPAIRABLE"
+  | "PARTS_REQUIRED"
+  | "CANCELLED";
 
 // Ticket Priority
-export type TicketPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+export type TicketPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
 
 // Estimate Status
-export type EstimateStatus = 'DRAFT' | 'SENT' | 'APPROVED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
+export type EstimateStatus =
+  "DRAFT" | "SENT" | "APPROVED" | "REJECTED" | "EXPIRED" | "CANCELLED";
 
 // Estimate Item Type
-export type EstimateItemType = 'PART' | 'LABOUR' | 'SERVICE' | 'OTHER';
+export type EstimateItemType = "PART" | "LABOUR" | "SERVICE" | "OTHER";
 
 // Estimate Decision type
-export type EstimateDecisionType = 'APPROVED' | 'REJECTED';
+export type EstimateDecisionType = "APPROVED" | "REJECTED";
 
 // Invoice Status
-export type InvoiceStatus = 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'REFUNDED' | 'VOID';
+export type InvoiceStatus =
+  "UNPAID" | "PARTIALLY_PAID" | "PAID" | "REFUNDED" | "VOID";
 
 // Payment Status is mapping directly to InvoiceStatus or similar
-export type PaymentMethod = 'CASH' | 'CARD' | 'UPI' | 'BANK_TRANSFER' | 'OTHER';
+export type PaymentMethod = "CASH" | "CARD" | "UPI" | "BANK_TRANSFER" | "OTHER";
 
 // Repair Feasibility
-export type RepairFeasibility = 'REPAIRABLE' | 'PARTIALLY_REPAIRABLE' | 'UNREPAIRABLE' | 'FURTHER_TESTING_REQUIRED';
+export type RepairFeasibility =
+  | "REPAIRABLE"
+  | "PARTIALLY_REPAIRABLE"
+  | "UNREPAIRABLE"
+  | "FURTHER_TESTING_REQUIRED";
 
 // Attachment Category
-export type AttachmentCategory = 'INTAKE_PHOTO' | 'DIAGNOSIS_PHOTO' | 'REPAIR_PHOTO' | 'DOCUMENT' | 'INVOICE' | 'OTHER';
+export type AttachmentCategory =
+  | "INTAKE_PHOTO"
+  | "DIAGNOSIS_PHOTO"
+  | "REPAIR_PHOTO"
+  | "DOCUMENT"
+  | "INVOICE"
+  | "OTHER";
 
 // Data Interfaces
 export interface Branch {

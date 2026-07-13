@@ -40,7 +40,7 @@ export class AuthController {
       secure: isSecure,
       sameSite: sameSite,
       domain: domain || undefined,
-      path: "/",
+      path: "/api/v1/auth", // Restricted path
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
   }
@@ -49,9 +49,24 @@ export class AuthController {
     const domain = process.env.COOKIE_DOMAIN;
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      path: "/",
+      path: "/api/v1/auth", // Restricted path
       domain: domain || undefined,
     });
+  }
+
+  private validateTrustedOrigin(req: Request) {
+    // CSRF protection: strict Origin/Referer validation for mutations
+    const origin = req.headers.origin;
+    if (origin) {
+      const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || "").split(
+        ",",
+      );
+      if (!allowedOrigins.includes(origin)) {
+        throw new UnauthorizedException(
+          "CSRF validation failed: Untrusted Origin",
+        );
+      }
+    }
   }
 
   @Post("login")
@@ -104,9 +119,13 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshToken = req.cookies["refreshToken"] || req.body.refreshToken;
+    this.validateTrustedOrigin(req);
+
+    const refreshToken = req.cookies["refreshToken"];
     if (!refreshToken) {
-      throw new UnauthorizedException("Refresh token is missing");
+      throw new UnauthorizedException(
+        "Refresh token is missing from HttpOnly cookie",
+      );
     }
 
     const ipAddress = req.ip || "127.0.0.1";
@@ -128,7 +147,9 @@ export class AuthController {
   @Post("logout")
   @ApiOperation({ summary: "Invalidate current session" })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const refreshToken = req.cookies["refreshToken"] || req.body.refreshToken;
+    this.validateTrustedOrigin(req);
+
+    const refreshToken = req.cookies["refreshToken"];
     if (refreshToken) {
       await this.authService.logout(refreshToken);
     }

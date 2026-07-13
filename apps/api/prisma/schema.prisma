@@ -279,7 +279,7 @@ model TicketStatusHistory {
   changedById    String
   createdAt      DateTime     @default(now())
 
-  repairTicket RepairTicket @relation(fields: [repairTicketId], references: [id], onDelete: Cascade)
+  repairTicket RepairTicket @relation(fields: [repairTicketId], references: [id], onDelete: Restrict)
   changedBy    User         @relation(fields: [changedById], references: [id])
 }
 
@@ -291,7 +291,7 @@ model TechnicianAssignmentHistory {
   assignedAt     DateTime  @default(now())
   removedAt      DateTime?
 
-  repairTicket RepairTicket @relation(fields: [repairTicketId], references: [id], onDelete: Cascade)
+  repairTicket RepairTicket @relation(fields: [repairTicketId], references: [id], onDelete: Restrict)
   technician   User         @relation("TechnicianAssignment", fields: [technicianId], references: [id])
   assignedBy   User         @relation("AssignmentCreator", fields: [assignedById], references: [id])
 }
@@ -312,7 +312,7 @@ model Diagnosis {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
-  repairTicket RepairTicket @relation(fields: [repairTicketId], references: [id], onDelete: Cascade)
+  repairTicket RepairTicket @relation(fields: [repairTicketId], references: [id], onDelete: Restrict)
   technician   User         @relation(fields: [technicianId], references: [id])
 }
 
@@ -325,7 +325,7 @@ model Estimate {
   taxAmount      Int
   discountAmount Int
   totalAmount    Int
-  currency       String         @default("USD")
+  currency       String         @default("INR")
   validUntil     DateTime
   customerNotes  String?
   internalNotes  String?
@@ -336,7 +336,7 @@ model Estimate {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  repairTicket RepairTicket   @relation(fields: [repairTicketId], references: [id], onDelete: Cascade)
+  repairTicket RepairTicket   @relation(fields: [repairTicketId], references: [id], onDelete: Restrict)
   createdBy    User           @relation(fields: [createdById], references: [id])
   items        EstimateItem[]
   decisions    EstimateDecision[]
@@ -351,7 +351,7 @@ model EstimateItem {
   unitPrice   Int
   totalPrice  Int
 
-  estimate Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  estimate Estimate @relation(fields: [estimateId], references: [id], onDelete: Restrict)
 }
 
 model EstimateDecision {
@@ -366,7 +366,9 @@ model EstimateDecision {
   userAgent       String?
   createdAt       DateTime             @default(now())
 
-  estimate Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  estimate Estimate @relation(fields: [estimateId], references: [id], onDelete: Restrict)
+
+  @@unique([estimateId])
 }
 
 model Invoice {
@@ -388,7 +390,7 @@ model Invoice {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  repairTicket RepairTicket  @relation(fields: [repairTicketId], references: [id], onDelete: Cascade)
+  repairTicket RepairTicket  @relation(fields: [repairTicketId], references: [id], onDelete: Restrict)
   createdBy    User          @relation(fields: [createdById], references: [id])
   items        InvoiceItem[]
   payments     PaymentRecord[]
@@ -403,7 +405,7 @@ model InvoiceItem {
   unitPrice   Int
   totalPrice  Int
 
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
 }
 
 model PaymentRecord {
@@ -417,7 +419,7 @@ model PaymentRecord {
   notes           String?
   createdAt       DateTime      @default(now())
 
-  invoice    Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice    Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
   receivedBy User    @relation(fields: [receivedById], references: [id])
 }
 
@@ -433,7 +435,7 @@ model Attachment {
   sizeBytes      Int
   createdAt      DateTime           @default(now())
 
-  repairTicket RepairTicket @relation(fields: [repairTicketId], references: [id], onDelete: Cascade)
+  repairTicket RepairTicket @relation(fields: [repairTicketId], references: [id], onDelete: Restrict)
   uploadedBy   User         @relation(fields: [uploadedById], references: [id])
 }
 

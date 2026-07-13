@@ -16,10 +16,12 @@ import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { EstimateStatus } from "@repairflow/shared-types";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 
+import { BranchAccessGuard } from "../common/guards/branch.guard";
+
 @ApiTags("Estimates")
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Controller()
+@UseGuards(JwtAuthGuard, RolesGuard, BranchAccessGuard)
+@Controller("estimates")
 export class EstimatesController {
   constructor(private readonly estimatesService: EstimatesService) {}
 

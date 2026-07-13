@@ -25,16 +25,17 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @Roles("SYSTEM_ADMIN", "OWNER")
+  @Roles("SYSTEM_ADMIN", "OWNER", "BRANCH_MANAGER")
   @ApiOperation({
-    summary: "Create a new staff user account (Admin/Owner only)",
+    summary: "Create a new staff user account",
   })
   async create(@Body() body: any, @CurrentUser() actor: any) {
-    const user = await this.usersService.create(body, actor.id);
+    const user = await this.usersService.create(body, actor);
     return { success: true, data: user };
   }
 
   @Get()
+  @Roles("SYSTEM_ADMIN", "OWNER", "BRANCH_MANAGER")
   @ApiOperation({ summary: "List all staff users" })
   async findAll(
     @Query("search") search?: string,
@@ -42,14 +43,18 @@ export class UsersController {
     @Query("branchId") branchId?: string,
     @Query("page") page?: number,
     @Query("limit") limit?: number,
+    @CurrentUser() actor?: any,
   ) {
-    const result = await this.usersService.findAll({
-      search,
-      role,
-      branchId,
-      page,
-      limit,
-    });
+    const result = await this.usersService.findAll(
+      {
+        search,
+        role,
+        branchId,
+        page,
+        limit,
+      },
+      actor,
+    );
     return {
       success: true,
       data: result.data,
@@ -59,8 +64,8 @@ export class UsersController {
 
   @Get(":id")
   @ApiOperation({ summary: "Get user details by ID" })
-  async findOne(@Param("id") id: string) {
-    const user = await this.usersService.findOne(id);
+  async findOne(@Param("id") id: string, @CurrentUser() actor: any) {
+    const user = await this.usersService.findOne(id, actor);
     return { success: true, data: user };
   }
 
@@ -71,7 +76,7 @@ export class UsersController {
     @Body() body: any,
     @CurrentUser() actor: any,
   ) {
-    const user = await this.usersService.update(id, body, actor.id);
+    const user = await this.usersService.update(id, body, actor);
     return { success: true, data: user };
   }
 
@@ -83,7 +88,7 @@ export class UsersController {
     @Body("status") status: UserStatus,
     @CurrentUser() actor: any,
   ) {
-    const user = await this.usersService.updateStatus(id, status, actor.id);
+    const user = await this.usersService.updateStatus(id, status, actor);
     return { success: true, data: user };
   }
 
@@ -95,7 +100,7 @@ export class UsersController {
     @Body("role") role: UserRole,
     @CurrentUser() actor: any,
   ) {
-    const user = await this.usersService.updateRole(id, role, actor.id);
+    const user = await this.usersService.updateRole(id, role, actor);
     return { success: true, data: user };
   }
 
@@ -110,7 +115,7 @@ export class UsersController {
     const userBranch = await this.usersService.assignBranch(
       id,
       branchId,
-      actor.id,
+      actor,
     );
     return { success: true, data: userBranch };
   }
@@ -123,7 +128,7 @@ export class UsersController {
     @Param("branchId") branchId: string,
     @CurrentUser() actor: any,
   ) {
-    const result = await this.usersService.removeBranch(id, branchId, actor.id);
+    const result = await this.usersService.removeBranch(id, branchId, actor);
     return { success: true, data: result };
   }
 }

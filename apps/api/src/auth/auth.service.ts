@@ -40,6 +40,10 @@ export class AuthService {
       throw new ForbiddenException("Your account has been disabled.");
     }
 
+    if (user.status === "INVITED") {
+      throw new ForbiddenException("Your account has not been activated yet.");
+    }
+
     // Check account lockout
     if (user.lockedUntil && user.lockedUntil > new Date()) {
       const waitTime = Math.ceil(
@@ -195,9 +199,10 @@ export class AuthService {
 
     if (
       session.user.status === "SUSPENDED" ||
-      session.user.status === "DISABLED"
+      session.user.status === "DISABLED" ||
+      session.user.status === "INVITED"
     ) {
-      throw new ForbiddenException("Account suspended or disabled");
+      throw new ForbiddenException("Account inactive, suspended or disabled");
     }
 
     // Generate new pair
@@ -302,9 +307,11 @@ export class AuthService {
     });
 
     // Logging/simulation of reset link
-    console.log(
-      `[DEV EMAIL SIMULATION] Password Reset Link for ${user.fullName}: http://localhost:3000/reset-password?token=${resetToken}`,
-    );
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        `[DEV EMAIL SIMULATION] Password Reset Link for ${user.fullName}: http://localhost:3000/reset-password?token=${resetToken}`,
+      );
+    }
   }
 
   async resetPassword(token: string, newPasswordHash: string) {

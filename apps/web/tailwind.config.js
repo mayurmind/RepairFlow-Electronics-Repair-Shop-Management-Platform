@@ -44,13 +44,14 @@ module.exports = {
         },
       },
       boxShadow: {
-        premium: '0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02)',
+        premium:
+          "0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02)",
       },
       fontFamily: {
-        outfit: ['Outfit', 'sans-serif'],
-        sans: ['Inter', 'sans-serif'],
-      }
+        outfit: ["Outfit", "sans-serif"],
+        sans: ["Inter", "sans-serif"],
+      },
     },
   },
   plugins: [],
-}
+};

@@ -2,11 +2,15 @@ import { NestFactory } from "@nestjs/core";
 import { ValidationPipe, BadRequestException } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import cookieParser from "cookie-parser";
+import * as express from "express";
 import helmet from "helmet";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
+import { validateEnvironment } from "./config/environment.schema";
 
 async function bootstrap() {
+  validateEnvironment();
+
   const app = await NestFactory.create(AppModule, {
     logger:
       process.env.NODE_ENV === "development"
@@ -14,20 +18,35 @@ async function bootstrap() {
         : ["error", "warn", "log"],
   });
 
+  // Enable Shutdown Hooks
+  app.enableShutdownHooks();
+
   // Global prefixes and versioning
   app.setGlobalPrefix("api/v1");
 
   // Security Headers
   app.use(helmet());
 
-  // Parsers
+  // Parsers with limits
   app.use(cookieParser());
+  app.use(express.json({ limit: "10mb" }));
+  app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
   // CORS Settings
-  const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || "").split(",");
+  // CORS Settings (Fail closed)
+  const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
+    ? process.env.CORS_ALLOWED_ORIGINS.split(",")
+    : [];
+
+  if (allowedOrigins.length === 0 && process.env.NODE_ENV === "production") {
+    console.error(
+      "❌ CORS_ALLOWED_ORIGINS is not configured for production. Failing closed.",
+    );
+    process.exit(1);
+  }
+
   app.enableCors({
-    origin:
-      allowedOrigins.length > 0 && allowedOrigins[0] ? allowedOrigins : true,
+    origin: allowedOrigins.length > 0 ? allowedOrigins : false,
     credentials: true,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
   });

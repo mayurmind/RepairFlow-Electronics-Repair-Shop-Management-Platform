@@ -1,12 +1,13 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError } from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api/v1';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1";
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // Crucial for sending HttpOnly refresh cookies
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -50,7 +51,10 @@ apiClient.interceptors.response.use(
     if (!originalRequest) return Promise.reject(error);
 
     // Skip refreshing token on login or refresh endpoint failures
-    if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/refresh')) {
+    if (
+      originalRequest.url?.includes("/auth/login") ||
+      originalRequest.url?.includes("/auth/refresh")
+    ) {
       return Promise.reject(error);
     }
 
@@ -87,11 +91,14 @@ apiClient.interceptors.response.use(
         processQueue(refreshError, null);
         setAccessToken(null);
         // Force redirect to login page only if they are on a protected staff console route
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           const path = window.location.pathname;
-          const isStaffPath = /^\/(dashboard|tickets|customers|devices|estimates|invoices|reports|users|branches|audit-logs)/.test(path);
+          const isStaffPath =
+            /^\/(dashboard|tickets|customers|devices|estimates|invoices|reports|users|branches|audit-logs)/.test(
+              path,
+            );
           if (isStaffPath) {
-            window.location.href = '/login?expired=true';
+            window.location.href = "/login?expired=true";
           }
         }
         return Promise.reject(refreshError);
@@ -103,8 +110,9 @@ apiClient.interceptors.response.use(
     // Standardize error formats for forms
     const errorData: any = error.response?.data;
     const cleanError = {
-      code: errorData?.error?.code || 'API_ERROR',
-      message: errorData?.error?.message || error.message || 'Something went wrong',
+      code: errorData?.error?.code || "API_ERROR",
+      message:
+        errorData?.error?.message || error.message || "Something went wrong",
       details: errorData?.error?.details || [],
     };
 

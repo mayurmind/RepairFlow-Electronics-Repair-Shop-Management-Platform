@@ -16,11 +16,12 @@ import { Roles } from "../common/decorators/roles.decorator";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { InvoiceStatus } from "@repairflow/shared-types";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
+import { BranchAccessGuard } from "../common/guards/branch.guard";
 
 @ApiTags("Invoices")
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Controller()
+@UseGuards(JwtAuthGuard, RolesGuard, BranchAccessGuard)
+@Controller("invoices")
 export class InvoicesController {
   constructor(private readonly invoicesService: InvoicesService) {}
 

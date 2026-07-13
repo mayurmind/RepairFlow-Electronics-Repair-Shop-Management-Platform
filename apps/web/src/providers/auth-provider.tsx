@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { apiClient, setAccessToken, getAccessToken } from '@/lib/api-client';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { apiClient, setAccessToken, getAccessToken } from "@/lib/api-client";
 
 interface AuthContextType {
   user: any | null;
@@ -21,13 +21,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkSession = async () => {
     try {
-      console.log('AuthProvider: Fetching current session from /auth/me...');
-      const res: any = await apiClient.get('/auth/me');
-      console.log('AuthProvider: /auth/me response res =', res);
-      console.log('AuthProvider: Setting user state to res.data =', res.data);
+      console.log("AuthProvider: Fetching current session from /auth/me...");
+      const res: any = await apiClient.get("/auth/me");
+      console.log("AuthProvider: /auth/me response res =", res);
+      console.log("AuthProvider: Setting user state to res.data =", res.data);
       setUser(res.data);
     } catch (err) {
-      console.error('AuthProvider: checkSession error =', err);
+      console.error("AuthProvider: checkSession error =", err);
       setUser(null);
     } finally {
       setLoading(false);
@@ -47,15 +47,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await apiClient.post('/auth/logout');
+      await apiClient.post("/auth/logout");
     } catch (err) {
-      console.error('Logout error', err);
+      console.error("Logout error", err);
     } finally {
       setAccessToken(null);
       setUser(null);
       setActiveBranchId(null);
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
       }
     }
   };
@@ -65,7 +65,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, activeBranchId, setActiveBranchId, logout, checkSession }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        activeBranchId,
+        setActiveBranchId,
+        logout,
+        checkSession,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -74,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

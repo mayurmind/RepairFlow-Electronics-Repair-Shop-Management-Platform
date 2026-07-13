@@ -1,12 +1,19 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Shield, Settings, Cpu, ChevronRight, Activity, Search } from 'lucide-react';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  Shield,
+  Settings,
+  Cpu,
+  ChevronRight,
+  Activity,
+  Search,
+} from "lucide-react";
 
 export default function HomePage() {
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState("");
   const router = useRouter();
 
   const handleTrack = (e: React.FormEvent) => {
@@ -25,8 +32,12 @@ export default function HomePage() {
             <Cpu className="w-6 h-6 text-blue-400" />
           </div>
           <div>
-            <span className="font-bold text-xl tracking-tight text-slate-900 font-outfit">RepairFlow</span>
-            <span className="text-[10px] block text-slate-500 uppercase tracking-widest font-mono">Platform</span>
+            <span className="font-bold text-xl tracking-tight text-slate-900 font-outfit">
+              RepairFlow
+            </span>
+            <span className="text-[10px] block text-slate-500 uppercase tracking-widest font-mono">
+              Platform
+            </span>
           </div>
         </div>
         <div>
@@ -47,10 +58,14 @@ export default function HomePage() {
           Live Repair Tracking System
         </div>
         <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 font-outfit max-w-3xl leading-tight">
-          Track Every Device, Repair & Customer <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">From Intake to Delivery</span>
+          Track Every Device, Repair & Customer{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+            From Intake to Delivery
+          </span>
         </h1>
         <p className="mt-4 text-lg text-slate-500 max-w-xl">
-          Enter your secure tracking code below to view real-time diagnosis details, approve repair estimates, and view invoice receipts.
+          Enter your secure tracking code below to view real-time diagnosis
+          details, approve repair estimates, and view invoice receipts.
         </p>
 
         {/* Tracking Input */}
@@ -80,9 +95,12 @@ export default function HomePage() {
             <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
               <Shield className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-slate-900 font-outfit">Secure Access</h3>
+            <h3 className="font-bold text-slate-900 font-outfit">
+              Secure Access
+            </h3>
             <p className="text-xs text-slate-500 mt-2">
-              Authentication-free tracking using military-grade secure expiring access token links.
+              Authentication-free tracking using military-grade secure expiring
+              access token links.
             </p>
           </div>
 
@@ -90,9 +108,12 @@ export default function HomePage() {
             <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
               <Activity className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-slate-900 font-outfit">Live Updates</h3>
+            <h3 className="font-bold text-slate-900 font-outfit">
+              Live Updates
+            </h3>
             <p className="text-xs text-slate-500 mt-2">
-              See live technician workbench statuses from intake diagnosis to ready for pickup.
+              See live technician workbench statuses from intake diagnosis to
+              ready for pickup.
             </p>
           </div>
 
@@ -100,9 +121,12 @@ export default function HomePage() {
             <div className="w-10 h-10 rounded-lg bg-slate-50 text-slate-700 flex items-center justify-center mb-4">
               <Settings className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-slate-900 font-outfit">One-Click Approval</h3>
+            <h3 className="font-bold text-slate-900 font-outfit">
+              One-Click Approval
+            </h3>
             <p className="text-xs text-slate-500 mt-2">
-              Approve or reject diagnostic item estimates directly from your dashboard.
+              Approve or reject diagnostic item estimates directly from your
+              dashboard.
             </p>
           </div>
         </div>

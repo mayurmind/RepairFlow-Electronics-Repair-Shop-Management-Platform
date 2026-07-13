@@ -16,10 +16,11 @@ graph TD
 ```
 
 ### Key Technology Selection
-* **Monorepo Manager**: `pnpm` workspaces for package link caching, and Turborepo for build orchestrations.
-* **Frontend**: Next.js (App Router), Tailwind CSS for styled layout elements, and TanStack Query for cache synchronization.
-* **Backend**: NestJS framework, structured in domain-driven modules.
-* **Database Layer**: PostgreSQL database managed via Prisma ORM for type-safe queries.
+
+- **Monorepo Manager**: `pnpm` workspaces for package link caching, and Turborepo for build orchestrations.
+- **Frontend**: Next.js (App Router), Tailwind CSS for styled layout elements, and TanStack Query for cache synchronization.
+- **Backend**: NestJS framework, structured in domain-driven modules.
+- **Database Layer**: PostgreSQL database managed via Prisma ORM for type-safe queries.
 
 ---
 
@@ -43,19 +44,21 @@ repairflow-platform/
 ## 3. Frontend Architecture
 
 The frontend Next.js App Router enforces a modular component structure:
-* **Features**: Domain directories (e.g., `features/repair-tickets/`) group domain api calls, helper hooks, forms, and custom components.
-* **API Client**: Axios client configured with credentials support. Interceptors catch `401 Unauthorized` responses and trigger token refreshes.
-* **State Management**: TanStack Query manages server state. Form validation is performed using React Hook Form + Zod.
+
+- **Features**: Domain directories (e.g., `features/repair-tickets/`) group domain api calls, helper hooks, forms, and custom components.
+- **API Client**: Axios client configured with credentials support. Interceptors catch `401 Unauthorized` responses and trigger token refreshes.
+- **State Management**: TanStack Query manages server state. Form validation is performed using React Hook Form + Zod.
 
 ---
 
 ## 4. Backend Architecture
 
 The NestJS backend isolates business responsibilities:
-* **Controllers**: Expose REST endpoints, validate parameters, and forward data to services.
-* **Services**: Handle business logic, pricing computations, database transactions, and audit trail outputs.
-* **Guards**: Enforce session verification (`JwtAuthGuard`), role checks (`RolesGuard`), and branch boundaries (`BranchAccessGuard`).
-* **Filters**: Catch all system errors and format them into a uniform error response payload.
+
+- **Controllers**: Expose REST endpoints, validate parameters, and forward data to services.
+- **Services**: Handle business logic, pricing computations, database transactions, and audit trail outputs.
+- **Guards**: Enforce session verification (`JwtAuthGuard`), role checks (`RolesGuard`), and branch boundaries (`BranchAccessGuard`).
+- **Filters**: Catch all system errors and format them into a uniform error response payload.
 
 ---
 
@@ -72,7 +75,7 @@ sequenceDiagram
     API->>DB: Write RefreshSession (tokenHash)
     API-->>Client: Set HttpOnly Cookie (refreshToken) & return accessToken
     Note over Client: Save accessToken in memory
-    
+
     Client->>API: GET /users (with Bearer accessToken)
     Note over API: JwtAuthGuard validates claims
     API-->>Client: Return users list
@@ -86,17 +89,20 @@ sequenceDiagram
 ```
 
 ### Security Highlights
-* **Rotating Refresh Tokens**: Each refresh call revokes the old token and writes a new session. If a revoked token is used, all sessions for the user are terminated immediately.
-* **Branch Isolation**: Non-admin users are restricted. The `BranchAccessGuard` verifies the `branchId` in parameters matches the user's assigned branches.
+
+- **Rotating Refresh Tokens**: Each refresh call revokes the old token and writes a new session. If a revoked token is used, all sessions for the user are terminated immediately.
+- **Branch Isolation**: Non-admin users are restricted. The `BranchAccessGuard` verifies the `branchId` in parameters matches the user's assigned branches.
 
 ---
 
 ## 6. Technical Decisions & Rejected Alternatives
 
 ### 1. Integer Cents vs. Floating Points
-* **Decision**: All financial fields (prices, taxes, discounts) are computed and stored as **integers in minor units (cents)**.
-* **Rationale**: Floating-point representations (e.g. `double`, `float`) introduce rounding errors during aggregate sums. Storing values as integers ensures 100% mathematical accuracy.
+
+- **Decision**: All financial fields (prices, taxes, discounts) are computed and stored as **integers in minor units (cents)**.
+- **Rationale**: Floating-point representations (e.g. `double`, `float`) introduce rounding errors during aggregate sums. Storing values as integers ensures 100% mathematical accuracy.
 
 ### 2. NestJS Monolith vs. Microservices
-* **Decision**: Built as a modular monolithic NestJS application.
-* **Rationale**: A microservices setup introduces network latencies, transaction distributed complexities, and operational build pipelines. A modular monolith provides clean code boundaries and easy scalability while maintaining low development overhead.
+
+- **Decision**: Built as a modular monolithic NestJS application.
+- **Rationale**: A microservices setup introduces network latencies, transaction distributed complexities, and operational build pipelines. A modular monolith provides clean code boundaries and easy scalability while maintaining low development overhead.
