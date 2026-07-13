@@ -40,4 +40,6 @@ jobs:
       run: pnpm run build
 
     - name: Validate Prisma
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/repairflow
       run: pnpm --filter api exec prisma validate
