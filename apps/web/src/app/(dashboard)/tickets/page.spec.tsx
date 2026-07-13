@@ -4,6 +4,7 @@ import TicketsPage from './page';
 import { useAuth } from '@/providers/auth-provider';
 import { useQueryClient } from '@tanstack/react-query';
 
+import type { Mock } from 'vitest';
 import { vi } from 'vitest';
 
 // Mock Next.js components
@@ -24,11 +25,12 @@ vi.mock('@tanstack/react-query', () => ({
 
 describe('Repair Ticket Form Validation', () => {
   beforeEach(() => {
-    (useAuth as any).mockReturnValue({
+    vi.clearAllMocks();
+    (useAuth as Mock).mockReturnValue({
       user: { role: 'BRANCH_MANAGER' },
       activeBranchId: 'branch-1'
     });
-    (useQueryClient as any).mockReturnValue({
+    (useQueryClient as Mock).mockReturnValue({
       invalidateQueries: vi.fn()
     });
   });

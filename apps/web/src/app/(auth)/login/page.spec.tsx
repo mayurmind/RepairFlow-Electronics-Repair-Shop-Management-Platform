@@ -4,6 +4,7 @@ import LoginPage from './page';
 import { useAuth } from '@/providers/auth-provider';
 import { apiClient } from '@/lib/api-client';
 
+import type { Mock } from 'vitest';
 import { vi } from 'vitest';
 
 // Mock Next.js router
@@ -26,7 +27,8 @@ vi.mock('@/providers/auth-provider', () => ({
 
 describe('Login Form Validation', () => {
   beforeEach(() => {
-    (useAuth as any).mockReturnValue({
+    vi.clearAllMocks();
+    (useAuth as Mock).mockReturnValue({
       checkSession: vi.fn(),
     });
   });
@@ -40,7 +42,7 @@ describe('Login Form Validation', () => {
   it('shows validation errors on empty submission', async () => {
     render(<LoginPage />);
     
-    const submitBtn = screen.getByRole('button', { name: /Sign In/i });
+    const submitBtn = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
@@ -50,7 +52,7 @@ describe('Login Form Validation', () => {
   });
 
   it('submits form when credentials are valid', async () => {
-    (apiClient.post as jest.Mock).mockResolvedValueOnce({
+    (apiClient.post as Mock).mockResolvedValueOnce({
       data: { accessToken: 'token', user: { role: 'OWNER', email: 'owner@repairflow.com' } }
     });
 
@@ -59,7 +61,7 @@ describe('Login Form Validation', () => {
     fireEvent.change(screen.getByPlaceholderText('e.g. tech.a1@repairflow.com'), { target: { value: 'owner@repairflow.com' } });
     fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'password123' } });
     
-    fireEvent.click(screen.getByRole('button', { name: /Sign In/i }));
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith('/auth/login', {
