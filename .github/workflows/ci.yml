@@ -25,7 +25,7 @@ jobs:
         version: 11.0.0
 
     - name: Install Dependencies
-      run: pnpm install --frozen-lockfile
+      run: pnpm config set ignore-scripts false && pnpm install --frozen-lockfile
 
     - name: Lint
       run: pnpm run lint

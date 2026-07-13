@@ -19,14 +19,5 @@
   "devDependencies": {
     "turbo": "^1.10.15",
     "prettier": "^3.0.3"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@nestjs/core",
-      "@prisma/client",
-      "@prisma/engines",
-      "prisma",
-      "unrs-resolver"
-    ]
   }
 }
