@@ -1,0 +1,472 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  SYSTEM_ADMIN
+  OWNER
+  BRANCH_MANAGER
+  FRONT_DESK
+  TECHNICIAN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  INVITED
+  DISABLED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  RECEIVED
+  DIAGNOSING
+  WAITING_FOR_APPROVAL
+  APPROVED
+  REPAIR_IN_PROGRESS
+  READY_FOR_COLLECTION
+  DELIVERED
+  REJECTED
+  UNREPAIRABLE
+  PARTS_REQUIRED
+  CANCELLED
+}
+
+enum RepairFeasibility {
+  REPAIRABLE
+  PARTIALLY_REPAIRABLE
+  UNREPAIRABLE
+  FURTHER_TESTING_REQUIRED
+}
+
+enum EstimateStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+enum EstimateItemType {
+  PART
+  LABOUR
+  SERVICE
+  OTHER
+}
+
+enum EstimateDecisionType {
+  APPROVED
+  REJECTED
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  REFUNDED
+  VOID
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+  BANK_TRANSFER
+  OTHER
+}
+
+enum AttachmentCategory {
+  INTAKE_PHOTO
+  DIAGNOSIS_PHOTO
+  REPAIR_PHOTO
+  DOCUMENT
+  INVOICE
+  OTHER
+}
+
+model Branch {
+  id           String       @id @default(uuid())
+  name         String
+  code         String       @unique
+  phone        String
+  email        String       @unique
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  postalCode   String
+  country      String
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  userBranches UserBranch[]
+  tickets      RepairTicket[]
+  auditLogs    AuditLog[]
+}
+
+model User {
+  id                  String           @id @default(uuid())
+  fullName            String
+  email               String           @unique
+  phone               String?
+  passwordHash        String
+  role                UserRole
+  status              UserStatus       @default(ACTIVE)
+  lastLoginAt         DateTime?
+  failedLoginAttempts Int              @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  userBranches        UserBranch[]
+  refreshSessions     RefreshSession[]
+  resetTokens         PasswordResetToken[]
+  assignedTickets     RepairTicket[]   @relation("TechnicianRelation")
+  createdTickets      RepairTicket[]   @relation("CreatorRelation")
+  deliveredTickets    RepairTicket[]   @relation("DelivererRelation")
+  statusChanges       TicketStatusHistory[]
+  diagnoses           Diagnosis[]
+  estimatesCreated    Estimate[]
+  invoicesCreated     Invoice[]
+  paymentsReceived    PaymentRecord[]
+  attachmentsUploaded Attachment[]
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+  technicianAssignments TechnicianAssignmentHistory[] @relation("TechnicianAssignment")
+  createdAssignments    TechnicianAssignmentHistory[] @relation("AssignmentCreator")
+}
+
+model UserBranch {
+  id        String   @id @default(uuid())
+  userId    String
+  branchId  String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch    Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, branchId])
+}
+
+model RefreshSession {
+  id                 String    @id @default(uuid())
+  userId             String
+  tokenHash          String    @unique
+  userAgent          String
+  ipAddress          String
+  expiresAt          DateTime
+  revokedAt          DateTime?
+  replacedBySessionId String?
+  createdAt          DateTime  @default(now())
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Customer {
+  id             String         @id @default(uuid())
+  fullName       String
+  phone          String
+  alternatePhone String?
+  email          String?
+  address        String?
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
+  devices        Device[]
+  tickets        RepairTicket[]
+
+  @@index([fullName])
+  @@index([phone])
+  @@index([email])
+}
+
+model Device {
+  id           String         @id @default(uuid())
+  customerId   String
+  category     String
+  brand        String
+  model        String
+  serialNumber String?
+  imeiNumber   String?
+  colour       String?
+  variant      String?
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  customer     Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tickets      RepairTicket[]
+
+  @@index([customerId])
+  @@index([serialNumber])
+  @@index([imeiNumber])
+  @@index([brand, model])
+}
+
+model RepairTicket {
+  id                   String       @id @default(uuid())
+  ticketNumber         String       @unique
+  branchId             String
+  customerId           String
+  deviceId             String
+  assignedTechnicianId String?
+  createdById          String
+  priority             TicketPriority @default(NORMAL)
+  status               TicketStatus @default(RECEIVED)
+  reportedProblem      String
+  existingDamage       String?
+  conditionNotes       String?
+  accessories          String?
+  internalNotes        String?
+  publicNotes          String?
+  expectedCompletionAt DateTime?
+  diagnosisStartedAt   DateTime?
+  repairStartedAt      DateTime?
+  readyAt              DateTime?
+  completedAt          DateTime?
+  deliveredAt          DateTime?
+  deliveredById        String?
+  deliveryNotes        String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  branch             Branch       @relation(fields: [branchId], references: [id])
+  customer           Customer     @relation(fields: [customerId], references: [id])
+  device             Device       @relation(fields: [deviceId], references: [id])
+  assignedTechnician User?        @relation("TechnicianRelation", fields: [assignedTechnicianId], references: [id])
+  createdBy          User         @relation("CreatorRelation", fields: [createdById], references: [id])
+  deliveredBy        User?        @relation("DelivererRelation", fields: [deliveredById], references: [id])
+
+  assignments   TechnicianAssignmentHistory[]
+  statusHistory TicketStatusHistory[]
+  diagnoses     Diagnosis[]
+  estimates     Estimate[]
+  invoices      Invoice[]
+  attachments   Attachment[]
+
+  @@index([ticketNumber])
+  @@index([branchId])
+  @@index([customerId])
+  @@index([deviceId])
+  @@index([assignedTechnicianId])
+}
+
+model TicketStatusHistory {
+  id             String       @id @default(uuid())
+  repairTicketId String
+  previousStatus TicketStatus
+  newStatus      TicketStatus
+  publicNote     String?
+  internalNote   String?
+  changedById    String
+  createdAt      DateTime     @default(now())
+
+  repairTicket RepairTicket @relation(fields: [repairTicketId], references: [id], onDelete: Cascade)
+  changedBy    User         @relation(fields: [changedById], references: [id])
+}
+
+model TechnicianAssignmentHistory {
+  id             String    @id @default(uuid())
+  repairTicketId String
+  technicianId   String
+  assignedById   String
+  assignedAt     DateTime  @default(now())
+  removedAt      DateTime?
+
+  repairTicket RepairTicket @relation(fields: [repairTicketId], references: [id], onDelete: Cascade)
+  technician   User         @relation("TechnicianAssignment", fields: [technicianId], references: [id])
+  assignedBy   User         @relation("AssignmentCreator", fields: [assignedById], references: [id])
+}
+
+model Diagnosis {
+  id                 String            @id @default(uuid())
+  repairTicketId     String
+  technicianId       String
+  faultCategory      String
+  diagnosticFindings String
+  recommendedRepair  String
+  partsRequired      String?
+  labourDescription  String?
+  repairFeasibility  RepairFeasibility
+  publicExplanation  String?
+  internalNotes      String?
+  completedAt        DateTime          @default(now())
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  repairTicket RepairTicket @relation(fields: [repairTicketId], references: [id], onDelete: Cascade)
+  technician   User         @relation(fields: [technicianId], references: [id])
+}
+
+model Estimate {
+  id             String         @id @default(uuid())
+  estimateNumber String         @unique
+  repairTicketId String
+  status         EstimateStatus @default(DRAFT)
+  subtotal       Int
+  taxAmount      Int
+  discountAmount Int
+  totalAmount    Int
+  currency       String         @default("USD")
+  validUntil     DateTime
+  customerNotes  String?
+  internalNotes  String?
+  sentAt         DateTime?
+  approvedAt     DateTime?
+  rejectedAt     DateTime?
+  createdById    String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  repairTicket RepairTicket   @relation(fields: [repairTicketId], references: [id], onDelete: Cascade)
+  createdBy    User           @relation(fields: [createdById], references: [id])
+  items        EstimateItem[]
+  decisions    EstimateDecision[]
+}
+
+model EstimateItem {
+  id          String           @id @default(uuid())
+  estimateId  String
+  itemType    EstimateItemType
+  description String
+  quantity    Int
+  unitPrice   Int
+  totalPrice  Int
+
+  estimate Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+}
+
+model EstimateDecision {
+  id              String               @id @default(uuid())
+  estimateId      String
+  decision        EstimateDecisionType
+  tokenHash       String               @unique
+  tokenExpiresAt  DateTime
+  decisionAt      DateTime?
+  customerComment String?
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime             @default(now())
+
+  estimate Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  invoiceNumber  String        @unique
+  repairTicketId String
+  status         InvoiceStatus @default(UNPAID)
+  subtotal       Int
+  taxAmount      Int
+  discountAmount Int
+  totalAmount    Int
+  amountPaid     Int           @default(0)
+  balanceDue     Int
+  invoiceDate    DateTime      @default(now())
+  dueDate        DateTime
+  customerNotes  String?
+  internalNotes  String?
+  createdById    String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  repairTicket RepairTicket  @relation(fields: [repairTicketId], references: [id], onDelete: Cascade)
+  createdBy    User          @relation(fields: [createdById], references: [id])
+  items        InvoiceItem[]
+  payments     PaymentRecord[]
+}
+
+model InvoiceItem {
+  id          String           @id @default(uuid())
+  invoiceId   String
+  itemType    EstimateItemType
+  description String
+  quantity    Int
+  unitPrice   Int
+  totalPrice  Int
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model PaymentRecord {
+  id              String        @id @default(uuid())
+  invoiceId       String
+  amount          Int
+  method          PaymentMethod
+  referenceNumber String?
+  receivedById    String
+  paidAt          DateTime      @default(now())
+  notes           String?
+  createdAt       DateTime      @default(now())
+
+  invoice    Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  receivedBy User    @relation(fields: [receivedById], references: [id])
+}
+
+model Attachment {
+  id             String             @id @default(uuid())
+  repairTicketId String
+  uploadedById   String
+  category       AttachmentCategory
+  originalName   String
+  storageKey     String
+  secureUrl      String
+  mimeType       String
+  sizeBytes      Int
+  createdAt      DateTime           @default(now())
+
+  repairTicket RepairTicket @relation(fields: [repairTicketId], references: [id], onDelete: Cascade)
+  uploadedBy   User         @relation(fields: [uploadedById], references: [id])
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  actorUserId String?
+  branchId    String?
+  action      String
+  entityType  String
+  entityId    String
+  oldValues   String?   @db.Text
+  newValues   String?   @db.Text
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  actor  User?   @relation(fields: [actorUserId], references: [id])
+  branch Branch? @relation(fields: [branchId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SequenceCounter {
+  name  String @id
+  value Int    @default(0)
+}

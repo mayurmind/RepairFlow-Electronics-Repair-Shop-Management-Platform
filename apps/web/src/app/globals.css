@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;      /* Light grey page background */
+    --foreground: 222 47% 11%;      /* Near-black primary text */
+    
+    --card: 0 0% 100%;              /* White surfaces */
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 222 47% 15%;         /* Deep Navy Primary (#111827 or similar) */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 215 16% 47%;       /* Slate Secondary */
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 217 91% 60%;          /* Electric Blue Accent */
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84.2% 60.2%;   /* Red Error */
+    --destructive-foreground: 210 40% 98%;
+
+    --warning: 38 92% 50%;          /* Amber Warning */
+    --warning-foreground: 210 40% 98%;
+
+    --success: 142 76% 36%;         /* Green Success */
+    --success-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Custom premium styling utilities */
+.glassmorphism {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.shadow-premium {
+  box-shadow: 0 10px 30px -15px rgba(17, 24, 39, 0.05),
+              0 4px 6px -4px rgba(17, 24, 39, 0.05);
+}
+
+.hover-slide {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-slide:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -10px rgba(17, 24, 39, 0.08);
+}

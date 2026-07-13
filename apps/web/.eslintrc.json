@@ -1,0 +1,6 @@
+{
+  "extends": ["@repairflow/eslint-config"],
+  "rules": {
+    "react/no-unescaped-entities": "off"
+  }
+}
