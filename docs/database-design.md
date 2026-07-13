@@ -10,23 +10,23 @@ We use a managed PostgreSQL instance with Prisma ORM. UUIDs are used for interna
 
 ```mermaid
 erDiagram
-    Branch ||--o{ UserBranch : "has"
-    User ||--o{ UserBranch : "belongs"
-    Branch ||--o{ RepairTicket : "registers"
-    Customer ||--o{ Device : "owns"
-    Customer ||--o{ RepairTicket : "requests"
-    Device ||--o{ RepairTicket : "repaired_in"
-    User ||--o{ RepairTicket : "assignee"
-    RepairTicket ||--o{ TicketStatusHistory : "logs"
-    RepairTicket ||--o{ Diagnosis : "has"
-    RepairTicket ||--o{ Estimate : "has"
-    Estimate ||--o{ EstimateItem : "contains"
-    Estimate ||--o{ EstimateDecision : "receives"
-    RepairTicket ||--o{ Invoice : "bills"
-    Invoice ||--o{ InvoiceItem : "contains"
-    Invoice ||--o{ PaymentRecord : "tracks"
-    RepairTicket ||--o{ Attachment : "binds"
-    User ||--o{ AuditLog : "acts"
+    Branch ||--o{ UserBranch : has
+    User ||--o{ UserBranch : belongs
+    Branch ||--o{ RepairTicket : registers
+    Customer ||--o{ Device : owns
+    Customer ||--o{ RepairTicket : requests
+    Device ||--o{ RepairTicket : repaired_in
+    User ||--o{ RepairTicket : assignee
+    RepairTicket ||--o{ TicketStatusHistory : logs
+    RepairTicket ||--o{ Diagnosis : has
+    RepairTicket ||--o{ Estimate : has
+    Estimate ||--o{ EstimateItem : contains
+    Estimate ||--o{ EstimateDecision : receives
+    RepairTicket ||--o{ Invoice : bills
+    Invoice ||--o{ InvoiceItem : contains
+    Invoice ||--o{ PaymentRecord : tracks
+    RepairTicket ||--o{ Attachment : binds
+    User ||--o{ AuditLog : acts
 ```
 
 ---
