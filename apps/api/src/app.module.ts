@@ -17,6 +17,7 @@ import { HealthModule } from "./health/health.module";
 import { NotificationsModule } from "./notifications/notifications.module";
 import { SettingsModule } from "./settings/settings.module";
 import { AttachmentsModule } from "./attachments/attachments.module";
+import { AppController } from "./app.controller";
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { AttachmentsModule } from "./attachments/attachments.module";
     SettingsModule,
     AttachmentsModule,
   ],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
