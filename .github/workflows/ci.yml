@@ -30,10 +30,13 @@ jobs:
       run: pnpm run lint
 
     - name: Test API
-      run: pnpm --filter api test
+      run: pnpm --filter api test -- --runInBand
 
     - name: Test Web
       run: pnpm --filter web test
 
     - name: Build
       run: pnpm run build
+
+    - name: Validate Prisma
+      run: pnpm --filter api exec prisma validate
