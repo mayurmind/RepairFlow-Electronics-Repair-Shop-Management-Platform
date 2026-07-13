@@ -1,13 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { AttachmentCategory } from '@repairflow/shared-types';
-import * as fs from 'fs';
-import * as path from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { AttachmentCategory } from "@repairflow/shared-types";
+import * as fs from "fs";
+import * as path from "path";
+import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
 export class AttachmentsService {
-  private uploadDir = path.join(__dirname, '../../uploads');
+  private uploadDir = path.join(__dirname, "../../uploads");
 
   constructor(private readonly prisma: PrismaService) {
     if (!fs.existsSync(this.uploadDir)) {
@@ -26,11 +30,11 @@ export class AttachmentsService {
       where: { id: ticketId },
     });
     if (!ticket) {
-      throw new NotFoundException('Repair ticket not found.');
+      throw new NotFoundException("Repair ticket not found.");
     }
 
     if (!file) {
-      throw new BadRequestException('No file provided.');
+      throw new BadRequestException("No file provided.");
     }
 
     // Generate safe storage key
@@ -63,12 +67,12 @@ export class AttachmentsService {
       where: { id: ticketId },
     });
     if (!ticket) {
-      throw new NotFoundException('Repair ticket not found.');
+      throw new NotFoundException("Repair ticket not found.");
     }
 
     return this.prisma.attachment.findMany({
       where: { repairTicketId: ticketId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: { uploadedBy: { select: { fullName: true } } },
     });
   }
@@ -76,7 +80,7 @@ export class AttachmentsService {
   async getFilePath(storageKey: string): Promise<string> {
     const filePath = path.join(this.uploadDir, storageKey);
     if (!fs.existsSync(filePath)) {
-      throw new NotFoundException('File not found on disk.');
+      throw new NotFoundException("File not found on disk.");
     }
     return filePath;
   }
@@ -87,7 +91,7 @@ export class AttachmentsService {
     });
 
     if (!attachment) {
-      throw new NotFoundException('Attachment not found.');
+      throw new NotFoundException("Attachment not found.");
     }
 
     // Remove from DB

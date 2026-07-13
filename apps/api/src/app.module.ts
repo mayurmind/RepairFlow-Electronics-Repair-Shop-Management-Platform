@@ -14,9 +14,9 @@ import { InvoicesModule } from "./invoices/invoices.module";
 import { ReportsModule } from "./reports/reports.module";
 import { AuditLogsModule } from "./audit-logs/audit-logs.module";
 import { HealthModule } from "./health/health.module";
-import { NotificationsModule } from './notifications/notifications.module';
-import { SettingsModule } from './settings/settings.module';
-import { AttachmentsModule } from './attachments/attachments.module';
+import { NotificationsModule } from "./notifications/notifications.module";
+import { SettingsModule } from "./settings/settings.module";
+import { AttachmentsModule } from "./attachments/attachments.module";
 
 @Module({
   imports: [

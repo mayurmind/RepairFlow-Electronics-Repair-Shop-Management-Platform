@@ -616,6 +616,7 @@ export default function TicketsPage() {
                             <div key={a.id} className="border border-slate-200 rounded-xl p-3 bg-white shadow-xs flex items-center justify-between gap-2.5">
                               <div className="min-w-0 flex items-center gap-2">
                                 {isImage ? (
+                                  /* eslint-disable-next-line @next/next/no-img-element */
                                   <img
                                     src={fileUrl}
                                     alt={a.originalName}
