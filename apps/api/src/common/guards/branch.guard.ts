@@ -67,6 +67,30 @@ export class BranchAccessGuard implements CanActivate {
         if (a) targetBranchId = a.repairTicket.branchId;
       } else if (path.includes("/branches")) {
         targetBranchId = id; // direct branch ID
+      } else if (path.includes("/users")) {
+        const targetUser = await this.prisma.user.findUnique({
+          where: { id },
+          include: { userBranches: true },
+        });
+        if (targetUser) {
+          const targetUserBranchIds = targetUser.userBranches.map(
+            (ub) => ub.branchId,
+          );
+          if (targetUserBranchIds.length > 0) {
+            const sharesBranch = targetUserBranchIds.some((bid) =>
+              assignedBranchIds.includes(bid),
+            );
+            if (!sharesBranch) {
+              throw new ForbiddenException(
+                "Access denied: You do not share a branch with this user.",
+              );
+            }
+          } else {
+            throw new ForbiddenException(
+              "Access denied: You do not have permission to access this user.",
+            );
+          }
+        }
       }
     }
 

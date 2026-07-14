@@ -13,6 +13,7 @@ describe("BranchAccessGuard", () => {
       estimate: { findUnique: jest.fn() },
       invoice: { findUnique: jest.fn() },
       attachment: { findUnique: jest.fn() },
+      user: { findUnique: jest.fn() },
     };
 
     guard = new BranchAccessGuard(mockPrismaService as any);
@@ -77,5 +78,40 @@ describe("BranchAccessGuard", () => {
 
     const result = await guard.canActivate(mockContext);
     expect(result).toBe(true);
+  });
+
+  it("should block user access if they do not share any branch with the target user", async () => {
+    mockRequest.url = "/api/v1/users/456";
+    mockRequest.params.id = "456";
+    mockPrismaService.user.findUnique.mockResolvedValue({
+      userBranches: [{ branchId: "branch-2" }],
+    });
+
+    await expect(guard.canActivate(mockContext)).rejects.toThrow(
+      ForbiddenException,
+    );
+  });
+
+  it("should allow user access if they share a branch with the target user", async () => {
+    mockRequest.url = "/api/v1/users/456";
+    mockRequest.params.id = "456";
+    mockPrismaService.user.findUnique.mockResolvedValue({
+      userBranches: [{ branchId: "branch-1" }],
+    });
+
+    const result = await guard.canActivate(mockContext);
+    expect(result).toBe(true);
+  });
+
+  it("should block user access if the target user has no branches assigned", async () => {
+    mockRequest.url = "/api/v1/users/456";
+    mockRequest.params.id = "456";
+    mockPrismaService.user.findUnique.mockResolvedValue({
+      userBranches: [],
+    });
+
+    await expect(guard.canActivate(mockContext)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 });
