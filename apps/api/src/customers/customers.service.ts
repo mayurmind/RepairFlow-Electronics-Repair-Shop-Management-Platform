@@ -6,6 +6,7 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
 import { createCustomerSchema } from "@repairflow/validation";
+import type { Prisma } from "@prisma/client";
 
 @Injectable()
 export class CustomersService {
@@ -37,7 +38,7 @@ export class CustomersService {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const customer = await tx.customer.create({
         data: {
           fullName,
@@ -135,7 +136,7 @@ export class CustomersService {
   async update(id: string, data: any, actorId: string) {
     const customer = await this.findOne(id);
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.customer.update({
         where: { id },
         data,

@@ -2,10 +2,12 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
 import { createBranchSchema } from "@repairflow/validation";
+import type { Prisma } from "@prisma/client";
 
 @Injectable()
 export class BranchesService {
@@ -41,7 +43,7 @@ export class BranchesService {
       throw new ConflictException("A branch with this email already exists.");
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const branch = await tx.branch.create({
         data: parsed.data,
       });
@@ -109,7 +111,7 @@ export class BranchesService {
   async update(id: string, data: any, actorId: string) {
     const branch = await this.findOne(id);
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.branch.update({
         where: { id },
         data,
@@ -133,7 +135,7 @@ export class BranchesService {
   async toggleStatus(id: string, isActive: boolean, actorId: string) {
     const branch = await this.findOne(id);
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.branch.update({
         where: { id },
         data: { isActive },
@@ -154,5 +156,3 @@ export class BranchesService {
     });
   }
 }
-
-import { BadRequestException } from "@nestjs/common";

@@ -10,6 +10,7 @@ import { AuditLogsService } from "../audit-logs/audit-logs.service";
 import { hash, verify } from "@node-rs/argon2";
 import * as crypto from "crypto";
 import { User, UserRole, UserStatus } from "@repairflow/shared-types";
+import type { Prisma } from "@prisma/client";
 
 @Injectable()
 export class AuthService {
@@ -221,27 +222,29 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     // Write new session and revoke old one in transaction
-    const newSession = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.refreshSession.create({
-        data: {
-          userId: session.userId,
-          tokenHash: newRefreshTokenHash,
-          ipAddress,
-          userAgent,
-          expiresAt,
-        },
-      });
+    const newSession = await this.prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        const created = await tx.refreshSession.create({
+          data: {
+            userId: session.userId,
+            tokenHash: newRefreshTokenHash,
+            ipAddress,
+            userAgent,
+            expiresAt,
+          },
+        });
 
-      await tx.refreshSession.update({
-        where: { id: session.id },
-        data: {
-          revokedAt: new Date(),
-          replacedBySessionId: created.id,
-        },
-      });
+        await tx.refreshSession.update({
+          where: { id: session.id },
+          data: {
+            revokedAt: new Date(),
+            replacedBySessionId: created.id,
+          },
+        });
 
-      return created;
-    });
+        return created;
+      },
+    );
 
     return {
       accessToken,
@@ -330,7 +333,7 @@ export class AuthService {
 
     const hashedPassword = await hash(newPasswordHash);
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Update password
       await tx.user.update({
         where: { id: resetToken.userId },

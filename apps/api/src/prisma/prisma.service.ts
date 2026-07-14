@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 @Injectable()
 export class PrismaService
@@ -26,7 +26,9 @@ export class PrismaService
   /**
    * Helper to execute transactional tasks with custom retries or context.
    */
-  async runInTransaction<T>(fn: (tx: any) => Promise<T>): Promise<T> {
-    return this.$transaction(fn);
+  async runInTransaction<T>(
+    operation: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    return this.$transaction(operation);
   }
 }

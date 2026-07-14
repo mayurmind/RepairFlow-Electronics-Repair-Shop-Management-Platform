@@ -74,11 +74,11 @@ export class BranchAccessGuard implements CanActivate {
         });
         if (targetUser) {
           const targetUserBranchIds = targetUser.userBranches.map(
-            (ub) => ub.branchId,
+            (userBranch: { branchId: string }) => userBranch.branchId,
           );
           if (targetUserBranchIds.length > 0) {
-            const sharesBranch = targetUserBranchIds.some((bid) =>
-              assignedBranchIds.includes(bid),
+            const sharesBranch = targetUserBranchIds.some((branchId: string) =>
+              assignedBranchIds.includes(branchId),
             );
             if (!sharesBranch) {
               throw new ForbiddenException(

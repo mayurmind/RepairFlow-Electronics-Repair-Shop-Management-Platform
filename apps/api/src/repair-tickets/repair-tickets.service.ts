@@ -17,6 +17,7 @@ import {
   RepairFeasibility,
   UserRole,
 } from "@repairflow/shared-types";
+import type { Prisma } from "@prisma/client";
 
 const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
   RECEIVED: ["DIAGNOSING", "CANCELLED"],
@@ -40,7 +41,7 @@ export class RepairTicketsService {
   ) {}
 
   private async generateTicketNumber(
-    tx: any,
+    tx: Prisma.TransactionClient,
     branchId: string,
   ): Promise<string> {
     const branch = await tx.branch.findUnique({ where: { id: branchId } });
@@ -111,7 +112,7 @@ export class RepairTicketsService {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const ticketNumber = await this.generateTicketNumber(tx, branchId);
 
       const ticket = await tx.repairTicket.create({
@@ -319,14 +320,16 @@ export class RepairTicketsService {
     }
 
     // Business Rule 4: Technician must belong to the ticket's branch
-    const techBranches = tech.userBranches.map((ub) => ub.branchId);
+    const techBranches = tech.userBranches.map(
+      (userBranch: { branchId: string }) => userBranch.branchId,
+    );
     if (!techBranches.includes(ticket.branchId)) {
       throw new BadRequestException(
         "Selected technician is not assigned to this branch.",
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Deactivate old assignment
       await tx.technicianAssignmentHistory.updateMany({
         where: { repairTicketId: ticketId, removedAt: null },
@@ -405,7 +408,7 @@ export class RepairTicketsService {
       }
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // If status is DELIVERED, make sure it matches rules
       const dataUpdate: any = { status: status as any };
       if (status === "DELIVERED") {
@@ -494,7 +497,7 @@ export class RepairTicketsService {
       });
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Check if diagnosis exists
       const existing = await tx.diagnosis.findFirst({
         where: { repairTicketId: ticketId },
@@ -569,7 +572,7 @@ export class RepairTicketsService {
     }
 
     // Reopening creates a new ticket linked to original (Business Rule 15)
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const newNum = await this.generateTicketNumber(tx, ticket.branchId);
 
       const newTicket = await tx.repairTicket.create({

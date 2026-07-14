@@ -9,6 +9,7 @@ import { AuditLogsService } from "../audit-logs/audit-logs.service";
 import { createEstimateSchema } from "@repairflow/validation";
 import * as crypto from "crypto";
 import { EstimateStatus, TicketStatus } from "@repairflow/shared-types";
+import type { Prisma } from "@prisma/client";
 
 @Injectable()
 export class EstimatesService {
@@ -22,7 +23,7 @@ export class EstimatesService {
   }
 
   private async generateEstimateNumber(
-    tx: any,
+    tx: Prisma.TransactionClient,
     branchCode: string,
   ): Promise<string> {
     const counter = await tx.sequenceCounter.update({
@@ -72,7 +73,7 @@ export class EstimatesService {
     const discountAmount = 0; // No discount in draft by default
     const totalAmount = subtotal + taxAmount - discountAmount;
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const estimateNumber = await this.generateEstimateNumber(
         tx,
         ticket.branch.code,
@@ -214,7 +215,7 @@ export class EstimatesService {
     const tokenHash = this.hashToken(rawToken);
     const tokenExpiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days expiry
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Deactivate old decisions if any
       await tx.estimateDecision.deleteMany({ where: { estimateId: id } });
 
@@ -279,7 +280,7 @@ export class EstimatesService {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.estimate.update({
         where: { id },
         data: { status: "CANCELLED" },
@@ -406,7 +407,7 @@ export class EstimatesService {
 
     const { decision, customerComment } = decisionInput;
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Update decision record
       await tx.estimateDecision.update({
         where: { id: decisionRecord.id },

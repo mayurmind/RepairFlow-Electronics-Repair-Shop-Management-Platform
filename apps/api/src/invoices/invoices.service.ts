@@ -13,6 +13,7 @@ import {
 import { InvoiceStatus, PaymentMethod } from "@repairflow/shared-types";
 import PDFDocument from "pdfkit";
 import { createHash } from "crypto";
+import type { Prisma, EstimateItem } from "@prisma/client";
 
 @Injectable()
 export class InvoicesService {
@@ -22,7 +23,7 @@ export class InvoicesService {
   ) {}
 
   private async generateInvoiceNumber(
-    tx: any,
+    tx: Prisma.TransactionClient,
     branchCode: string,
   ): Promise<string> {
     const counter = await tx.sequenceCounter.update({
@@ -101,7 +102,7 @@ export class InvoicesService {
 
     const totalAmount = subtotal + taxAmount - discountAmount;
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const invoiceNumber = await this.generateInvoiceNumber(
         tx,
         ticket.branch.code,
@@ -125,12 +126,12 @@ export class InvoicesService {
           createdById: actor.id,
           items: {
             createMany: {
-              data: approvedEstimate.items.map((i) => ({
-                itemType: i.itemType,
-                description: i.description,
-                quantity: i.quantity,
-                unitPrice: i.unitPrice,
-                totalPrice: i.totalPrice,
+              data: approvedEstimate.items.map((item: EstimateItem) => ({
+                itemType: item.itemType,
+                description: item.description,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                totalPrice: item.totalPrice,
               })),
             },
           },
@@ -264,7 +265,7 @@ export class InvoicesService {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Record payment
       const payment = await tx.paymentRecord.create({
         data: {
@@ -321,7 +322,7 @@ export class InvoicesService {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.invoice.update({
         where: { id },
         data: { status: "VOID", balanceDue: 0 },

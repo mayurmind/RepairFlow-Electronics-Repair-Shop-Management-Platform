@@ -15,6 +15,7 @@ import {
 import { hash } from "@node-rs/argon2";
 import { UserRole, UserStatus } from "@repairflow/shared-types";
 import { UserResponseMapper } from "./mappers/user-response.mapper";
+import type { Prisma } from "@prisma/client";
 import {
   AuthorizationService,
   ActorContext,
@@ -75,7 +76,7 @@ export class UsersService {
     }
     const passwordHash = await hash(password);
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const user = await tx.user.create({
         data: {
           fullName,
@@ -231,7 +232,7 @@ export class UsersService {
       });
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.user.update({
         where: { id },
         data: parsed.data as any,
@@ -265,7 +266,7 @@ export class UsersService {
       "SUSPEND",
     );
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.user.update({
         where: { id },
         data: { status: status as any },
@@ -308,7 +309,7 @@ export class UsersService {
       "CHANGE_ROLE",
     );
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.user.update({
         where: { id },
         data: { role: role as any },
@@ -364,7 +365,7 @@ export class UsersService {
       return { success: true };
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const userBranch = await tx.userBranch.create({
         data: { userId, branchId },
       });
@@ -405,7 +406,7 @@ export class UsersService {
       throw new NotFoundException("User is not assigned to this branch.");
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.userBranch.delete({
         where: { userId_branchId: { userId, branchId } },
       });

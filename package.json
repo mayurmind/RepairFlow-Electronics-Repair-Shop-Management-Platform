@@ -8,9 +8,11 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "build:packages": "pnpm --filter @repairflow/shared-types build && pnpm --filter @repairflow/validation build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "test:api:ci": "pnpm build:packages && pnpm --filter api exec prisma generate && pnpm --filter api test:ci",
     "test:e2e": "turbo run test:e2e",
     "db:migrate": "turbo run db:migrate",
     "db:seed": "turbo run db:seed",
