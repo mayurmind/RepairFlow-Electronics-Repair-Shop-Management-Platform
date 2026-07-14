@@ -72,6 +72,7 @@ jobs:
       run: pnpm build
 
   e2e-tests:
+    name: E2E Tests
     needs: build-and-test
     runs-on: ubuntu-latest
 
@@ -90,50 +91,62 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/repairflow?schema=public
+      WEB_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4000/api/v1
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      JWT_ACCESS_SECRET: ci_secure_access_secret_for_repairflow_testing_123456789
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      COOKIE_SECURE: "false"
+      COOKIE_SAME_SITE: lax
+      LOG_LEVEL: info
+
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '22'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v3
-      with:
-        version: 11.0.0
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 11.0.0
 
-    - name: Install Dependencies
-      run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-    - name: Compile config packages
-      run: |
-        pnpm --filter @repairflow/typescript-config build
-        pnpm --filter @repairflow/shared-types build
-        pnpm --filter @repairflow/validation build
+      - name: Build internal packages
+        run: pnpm build:packages
 
-    - name: Setup env file
-      run: |
-        cp .env.example .env
-        sed -i 's|DATABASE_URL=.*|DATABASE_URL=postgresql://postgres:postgrespassword@localhost:5432/repairflow?schema=public|' .env
-        sed -i 's|COOKIE_SECURE=.*|COOKIE_SECURE=false|' .env
+      - name: Generate Prisma Client
+        run: pnpm --filter api exec prisma generate
 
-    - name: Run Prisma Migrations
-      env:
-        DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/repairflow?schema=public
-      run: pnpm --filter api exec prisma migrate deploy
+      - name: Validate Prisma schema
+        run: pnpm --filter api exec prisma validate
 
-    - name: Seed Database
-      env:
-        DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/repairflow?schema=public
-      run: pnpm --filter api exec prisma db seed
+      - name: Run Prisma migrations
+        run: pnpm --filter api exec prisma migrate deploy
 
-    - name: Install Playwright Browsers
-      run: pnpm --filter e2e exec playwright install --with-deps
+      - name: Seed test database
+        run: pnpm --filter api exec prisma db seed
 
-    - name: Run E2E Tests
-      env:
-        DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/repairflow?schema=public
-        JWT_ACCESS_SECRET: dev_jwt_access_secret_key_which_must_be_very_long_and_secure_12345
-        COOKIE_SECURE: false
-      run: pnpm --filter e2e test
+      - name: Install Playwright Chromium
+        run: pnpm --filter e2e exec playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: pnpm --filter e2e test
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
