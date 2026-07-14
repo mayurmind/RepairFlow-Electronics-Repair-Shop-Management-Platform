@@ -1,4 +1,4 @@
-import { ExecutionContext, ForbiddenException } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 import { BranchAccessGuard } from "./branch.guard";
 
 describe("BranchAccessGuard", () => {

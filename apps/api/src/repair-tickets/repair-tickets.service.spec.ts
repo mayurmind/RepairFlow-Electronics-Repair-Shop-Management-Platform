@@ -2,6 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { RepairTicketsService } from "./repair-tickets.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
+import type { Prisma } from "@prisma/client";
 import {
   BadRequestException,
   NotFoundException,
@@ -54,7 +55,6 @@ describe("RepairTicketsService", () => {
     ticketStatusHistory: {
       create: jest.fn(),
     },
-    $transaction: jest.fn((cb) => cb(mockPrismaService)),
   };
 
   const mockAuditLogsService = {
@@ -73,6 +73,13 @@ describe("RepairTicketsService", () => {
     service = module.get<RepairTicketsService>(RepairTicketsService);
     prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
+
+    mockPrismaService.$transaction = jest.fn(
+      async <T>(
+        callback: (tx: Prisma.TransactionClient) => Promise<T>,
+      ): Promise<T> =>
+        callback(mockPrismaService as unknown as Prisma.TransactionClient),
+    );
   });
 
   it("should be defined", () => {

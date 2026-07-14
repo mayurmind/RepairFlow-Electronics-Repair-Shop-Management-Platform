@@ -3,6 +3,7 @@ import { AttachmentsService } from "./attachments.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { NotFoundException, BadRequestException } from "@nestjs/common";
 import * as fs from "fs";
+import type { AttachmentCategory } from "@repairflow/shared-types";
 
 jest.mock("fs");
 
@@ -42,8 +43,9 @@ describe("AttachmentsService", () => {
 
   it("should throw if ticket not found on upload", async () => {
     mockPrismaService.repairTicket.findUnique.mockResolvedValue(null);
+    const category: AttachmentCategory = "INTAKE_PHOTO";
     await expect(
-      service.uploadAttachment("t1", {}, "IMAGE" as any, "u1"),
+      service.uploadAttachment("t1", {}, category, "u1"),
     ).rejects.toThrow(NotFoundException);
   });
 });

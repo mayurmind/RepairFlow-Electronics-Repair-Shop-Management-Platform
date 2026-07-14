@@ -5,6 +5,7 @@ import { JwtService } from "@nestjs/jwt";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
 import { UnauthorizedException, ForbiddenException } from "@nestjs/common";
 import { verify, hash } from "@node-rs/argon2";
+import type { Prisma } from "@prisma/client";
 
 jest.mock("@node-rs/argon2", () => ({
   verify: jest.fn(),
@@ -47,7 +48,6 @@ describe("AuthService", () => {
       create: jest.fn(),
       findUnique: jest.fn(),
     },
-    $transaction: jest.fn((cb) => cb(mockPrismaService)),
   };
 
   const mockJwtService = {
@@ -73,6 +73,13 @@ describe("AuthService", () => {
     jwtService = module.get<JwtService>(JwtService);
 
     jest.clearAllMocks();
+
+    mockPrismaService.$transaction = jest.fn(
+      async <T>(
+        callback: (tx: Prisma.TransactionClient) => Promise<T>,
+      ): Promise<T> =>
+        callback(mockPrismaService as unknown as Prisma.TransactionClient),
+    );
   });
 
   it("should be defined", () => {
