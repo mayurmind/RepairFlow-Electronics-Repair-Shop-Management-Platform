@@ -8,7 +8,13 @@ export class FindAllUsersQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsEnum(["SYSTEM_ADMIN", "OWNER", "BRANCH_MANAGER", "FRONT_DESK", "TECHNICIAN"])
+  @IsEnum([
+    "SYSTEM_ADMIN",
+    "OWNER",
+    "BRANCH_MANAGER",
+    "FRONT_DESK",
+    "TECHNICIAN",
+  ])
   role?: UserRole;
 
   @IsOptional()

@@ -1,4 +1,10 @@
-import { IsString, IsEmail, IsOptional, IsEnum, MinLength } from "class-validator";
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsEnum,
+  MinLength,
+} from "class-validator";
 import { UserRole, UserStatus } from "@repairflow/shared-types";
 
 export class CreateUserDto {
@@ -17,7 +23,13 @@ export class CreateUserDto {
   @MinLength(8)
   password!: string;
 
-  @IsEnum(["SYSTEM_ADMIN", "OWNER", "BRANCH_MANAGER", "FRONT_DESK", "TECHNICIAN"])
+  @IsEnum([
+    "SYSTEM_ADMIN",
+    "OWNER",
+    "BRANCH_MANAGER",
+    "FRONT_DESK",
+    "TECHNICIAN",
+  ])
   role!: UserRole;
 
   @IsOptional()
