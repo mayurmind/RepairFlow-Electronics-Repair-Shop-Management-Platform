@@ -22,6 +22,18 @@ const normalizePhone = ({ value }: { value: unknown }): unknown => {
   return value;
 };
 
+const normalizeOptionalPhone = ({
+  value,
+}: {
+  value: unknown;
+}): unknown => {
+  if (value === "" || value === null || value === undefined) {
+    return undefined;
+  }
+
+  return normalizePhone({ value });
+};
+
 export class CreateCustomerDto {
   @ApiProperty({ example: "Aarav Sharma", minLength: 2, maxLength: 120 })
   @Transform(trimString)
@@ -33,19 +45,19 @@ export class CreateCustomerDto {
   @ApiProperty({ example: "+919876543210", minLength: 7, maxLength: 20 })
   @Transform(normalizePhone)
   @IsString()
-  @Matches(/^\+?[1-9]\d{6,14}$/, {
-    message: "phone must be a valid phone number",
+  @Matches(/^\+[1-9]\d{6,14}$/, {
+    message: "phone must be a valid E.164 phone number",
   })
   phone!: string;
 
   @ApiPropertyOptional({ example: "+919123456789", nullable: true })
   @IsOptional()
-  @Transform(normalizePhone)
+  @Transform(normalizeOptionalPhone)
   @IsString()
-  @Matches(/^\+?[1-9]\d{6,14}$/, {
-    message: "alternatePhone must be a valid phone number",
+  @Matches(/^\+[1-9]\d{6,14}$/, {
+    message: "alternatePhone must be a valid E.164 phone number",
   })
-  alternatePhone?: string | null;
+  alternatePhone?: string;
 
   @ApiPropertyOptional({ example: "aarav@example.com" })
   @IsOptional()

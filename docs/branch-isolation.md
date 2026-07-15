@@ -24,6 +24,9 @@ where.branchId = { in: assignedBranchIds };
 ```
 For related entities like Customers and Devices that are shared across branches, the query checks whether the customer has tickets in the user's branch.
 
+> **Note on Phase 2A Limitations:**
+> Currently, customers (and their associated devices) that have *zero* repair tickets are globally visible to all branches. This occurs because isolation is predicated on the branch of the associated repair tickets. A strict branch-ownership model for newly created customers and devices will be defined and implemented in Phase 2B.
+
 ## Role Exceptions
 
 - **`SYSTEM_ADMIN` & `OWNER`**: Have global visibility. They bypass branch isolation checks in the services and can view/manage data across all branches.

@@ -30,16 +30,22 @@ export class DevicesService {
 
     // Branch isolation check
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      const tickets = await this.prisma.repairTicket.findMany({
+      const hasTickets = await this.prisma.repairTicket.count({
         where: { customerId },
-        select: { branchId: true },
       });
 
-      if (tickets.length > 0) {
-        const hasAccess = tickets.some((t) =>
-          actor.branches?.map((b) => b.id).includes(t.branchId),
-        );
-        if (!hasAccess) {
+      if (hasTickets > 0) {
+        const accessibleTicket = await this.prisma.repairTicket.findFirst({
+          where: {
+            customerId,
+            branchId: {
+              in: actor.branches?.map((branch) => branch.id) ?? [],
+            },
+          },
+          select: { id: true },
+        });
+
+        if (!accessibleTicket) {
           throw new ForbiddenException(
             "You do not have access to this customer.",
           );

@@ -11,6 +11,13 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 const trimString = ({ value }: { value: unknown }): unknown =>
   typeof value === "string" ? value.trim() : value;
 
+const normalizeOptionalString = ({ value }: { value: unknown }): unknown => {
+  if (value === "" || value === null || value === undefined) {
+    return undefined;
+  }
+  return typeof value === "string" ? value.trim() : value;
+};
+
 export class CreateDeviceDto {
   @ApiProperty({ example: "Smartphone", minLength: 2, maxLength: 80 })
   @Transform(trimString)
@@ -42,7 +49,7 @@ export class CreateDeviceDto {
 
   @ApiPropertyOptional({ example: "356789012345678", nullable: true })
   @IsOptional()
-  @Transform(trimString)
+  @Transform(normalizeOptionalString)
   @Matches(/^\d{15}$/, { message: "imeiNumber must contain exactly 15 digits" })
   imeiNumber?: string | null;
 
