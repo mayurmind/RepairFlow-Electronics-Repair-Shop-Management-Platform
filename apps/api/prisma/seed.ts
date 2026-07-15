@@ -568,11 +568,13 @@ async function main() {
 
   console.log("Seeding repair tickets...");
   for (const t of statusesList) {
-    const assignedBranch = customers[t.customerIdx].branchId === branchA.id ? branchA : branchB;
-    const assignedCreator = assignedBranch.id === branchA.id ? frontDeskA : frontDeskB;
+    const assignedBranch =
+      customers[t.customerIdx].branchId === branchA.id ? branchA : branchB;
+    const assignedCreator =
+      assignedBranch.id === branchA.id ? frontDeskA : frontDeskB;
     let assignedTech = t.tech;
     if (assignedTech) {
-        assignedTech = assignedBranch.id === branchA.id ? techA1 : techB1;
+      assignedTech = assignedBranch.id === branchA.id ? techA1 : techB1;
     }
 
     const num = await generateTicketNumber(assignedBranch.code);
