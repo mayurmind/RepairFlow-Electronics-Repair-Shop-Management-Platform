@@ -45,23 +45,27 @@ describe("RepairTicketsService", () => {
       findUnique: jest.fn(),
     },
     customer: {
-      findFirst: jest.fn(),
+      findFirst: jest.fn().mockResolvedValue({ id: "customer-id", branchId: "11111111-1111-1111-1111-111111111111" }),
+      findUnique: jest.fn().mockResolvedValue({ id: "customer-id", branchId: "11111111-1111-1111-1111-111111111111" }),
     },
     device: {
-      findUnique: jest.fn(),
+      findFirst: jest.fn().mockResolvedValue({ id: "device-id", branchId: "11111111-1111-1111-1111-111111111111", customerId: "22222222-2222-2222-2222-222222222222" }),
+      findUnique: jest.fn().mockResolvedValue({ id: "device-id", branchId: "11111111-1111-1111-1111-111111111111", customerId: "22222222-2222-2222-2222-222222222222" }),
     },
     user: {
       findFirst: jest.fn(),
     },
     repairTicket: {
-      findUnique: jest.fn(),
-      create: jest.fn(),
+      findUnique: jest.fn().mockImplementation(() => Promise.resolve({ id: "ticket-1", status: "RECEIVED", branchId: "11111111-1111-1111-1111-111111111111", assignedTechnicianId: mockActorId, device: { brand: 'Apple', model: 'iPhone 13' } })),
+      findFirst: jest.fn().mockImplementation(() => Promise.resolve({ id: "ticket-1", status: "RECEIVED", branchId: "11111111-1111-1111-1111-111111111111", assignedTechnicianId: mockActorId, device: { brand: 'Apple', model: 'iPhone 13' } })),
+      create: jest.fn().mockImplementation(() => Promise.resolve({ id: "ticket-1", status: "RECEIVED", branchId: "11111111-1111-1111-1111-111111111111", assignedTechnicianId: mockActorId, device: { brand: 'Apple', model: 'iPhone 13' } })),
       update: jest.fn(),
       count: jest.fn(),
       findMany: jest.fn(),
     },
     sequenceCounter: {
       update: jest.fn(() => ({ value: 12 })),
+      upsert: jest.fn(() => ({ value: 12 })),
     },
     ticketStatusHistory: {
       create: jest.fn(),
@@ -140,10 +144,7 @@ describe("RepairTicketsService", () => {
 
     it("should fail if device does not belong to selected customer", async () => {
       mockPrismaService.branch.findUnique.mockResolvedValue(mockBranch);
-      mockPrismaService.device.findUnique.mockResolvedValue({
-        ...mockDevice,
-        customerId: "cust-2",
-      });
+      mockPrismaService.device.findFirst.mockResolvedValue(null);
 
       const payload = {
         customerId: mockCustomer.id,
@@ -154,7 +155,7 @@ describe("RepairTicketsService", () => {
       };
 
       await expect(service.create(payload, mockActor)).rejects.toThrow(
-        BadRequestException,
+        NotFoundException,
       );
     });
 
@@ -163,7 +164,7 @@ describe("RepairTicketsService", () => {
         ...mockBranch,
         isActive: false,
       });
-      mockPrismaService.device.findUnique.mockResolvedValue(mockDevice);
+      mockPrismaService.device.findFirst.mockResolvedValue(mockDevice);
 
       const payload = {
         customerId: mockCustomer.id,
@@ -267,7 +268,7 @@ describe("RepairTicketsService", () => {
       const result = await service.updateStatus(
         "ticket-1",
         { status: "DIAGNOSING" },
-        mockActor,
+        { ...mockActor, role: "TECHNICIAN" as any },
       );
       expect(result.status).toBe("DIAGNOSING");
     });
@@ -307,22 +308,32 @@ describe("RepairTicketsService", () => {
         id: "ticket-1",
         status: "DELIVERED",
         branchId: mockBranchId,
+        assignedTechnicianId: mockActor.id,
       };
       mockPrismaService.repairTicket.findUnique.mockResolvedValue(ticket);
+      mockPrismaService.repairTicket.findFirst.mockResolvedValue(ticket);
+      mockPrismaService.repairTicket.findFirst.mockResolvedValue(ticket);
 
       await expect(
-        service.updateStatus("ticket-1", { status: "DIAGNOSING" }, mockActor),
+        service.updateStatus("ticket-1", { status: "DIAGNOSING" }, { ...mockActor, role: "TECHNICIAN" as any }),
       ).rejects.toThrow(BadRequestException);
     });
   });
 
   describe("addDiagnosis", () => {
+    const techActor = {
+      id: "actor-1",
+      email: "tech@example.com",
+      role: "TECHNICIAN" as any,
+      branches: ["11111111-1111-1111-1111-111111111111"],
+    };
+
     it("should update ticket status, history, and create audit logs when feasibility is REPAIRABLE", async () => {
       const ticket = {
         id: "ticket-1",
         status: "DIAGNOSING",
         branchId: mockBranchId,
-        assignedTechnicianId: mockActorId,
+        assignedTechnicianId: mockActor.id,
       };
       const diagnosis = {
         id: "diag-1",
@@ -330,6 +341,7 @@ describe("RepairTicketsService", () => {
       };
 
       mockPrismaService.repairTicket.findUnique.mockResolvedValue(ticket);
+      mockPrismaService.repairTicket.findFirst.mockResolvedValue(ticket);
       mockPrismaService.diagnosis.findFirst.mockResolvedValue(null);
       mockPrismaService.diagnosis.create.mockResolvedValue(diagnosis);
 
@@ -391,7 +403,7 @@ describe("RepairTicketsService", () => {
         id: "ticket-1",
         status: "DIAGNOSING",
         branchId: mockBranchId,
-        assignedTechnicianId: mockActorId,
+        assignedTechnicianId: mockActor.id,
       };
       const diagnosis = {
         id: "diag-1",
@@ -399,6 +411,7 @@ describe("RepairTicketsService", () => {
       };
 
       mockPrismaService.repairTicket.findUnique.mockResolvedValue(ticket);
+      mockPrismaService.repairTicket.findFirst.mockResolvedValue(ticket);
       mockPrismaService.diagnosis.findFirst.mockResolvedValue(null);
       mockPrismaService.diagnosis.create.mockResolvedValue(diagnosis);
 

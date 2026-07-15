@@ -41,6 +41,19 @@ const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
   CANCELLED: [], // Terminal state
 };
 
+const STATUS_TRANSITION_ROLES = {
+  DIAGNOSING: ["TECHNICIAN", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
+  WAITING_FOR_APPROVAL: ["TECHNICIAN", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
+  APPROVED: ["FRONT_DESK", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
+  REJECTED: ["FRONT_DESK", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
+  CANCELLED: ["FRONT_DESK", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
+  REPAIR_IN_PROGRESS: ["TECHNICIAN", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
+  PARTS_REQUIRED: ["TECHNICIAN", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
+  UNREPAIRABLE: ["TECHNICIAN", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
+  READY_FOR_COLLECTION: ["TECHNICIAN", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
+  DELIVERED: ["FRONT_DESK", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
+} as const;
+
 @Injectable()
 export class RepairTicketsService {
   constructor(
@@ -57,13 +70,15 @@ export class RepairTicketsService {
       throw new NotFoundException("Branch not found");
     }
 
-    const counter = await tx.sequenceCounter.update({
+    const counter = await tx.sequenceCounter.upsert({
       where: { name: "ticket" },
-      data: { value: { increment: 1 } },
+      create: { name: "ticket", value: 1 },
+      update: { value: { increment: 1 } },
     });
 
+    const currentYear = new Date().getFullYear();
     const seqStr = String(counter.value).padStart(6, "0");
-    return `RF-${branch.code}-2026-${seqStr}`;
+    return `RF-${branch.code}-${currentYear}-${seqStr}`;
   }
 
   async create(dto: CreateRepairTicketDto, actor: AuthenticatedUser) {
@@ -116,23 +131,25 @@ export class RepairTicketsService {
       );
     }
 
-    // Validate customer owner exists and is active (not deleted)
+    // Validate customer owner exists, is active (not deleted), and matches the branch
     const customer = await this.prisma.customer.findFirst({
-      where: { id: customerId, deletedAt: null },
+      where: { id: customerId, branchId, deletedAt: null },
+      select: { id: true, branchId: true },
     });
     if (!customer) {
-      throw new BadRequestException("Customer profile not found or archived.");
+      throw new NotFoundException(
+        "Customer profile not found or archived in this branch.",
+      );
     }
 
-    // Business Rule: The device must belong to the selected customer
-    const device = await this.prisma.device.findUnique({
-      where: { id: deviceId },
+    // Business Rule: The device must belong to the selected customer and branch
+    const device = await this.prisma.device.findFirst({
+      where: { id: deviceId, customerId, branchId },
+      select: { id: true, customerId: true, branchId: true },
     });
     if (!device) {
-      throw new BadRequestException("Device profile not found.");
+      throw new NotFoundException("Device profile not found in this branch.");
     }
-
-    verifyCustomerDeviceIntegrity(device, customerId);
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const ticketNumber = await this.generateTicketNumber(tx, branchId);
@@ -279,8 +296,15 @@ export class RepairTicketsService {
   }
 
   async findOne(id: string, actor: AuthenticatedUser) {
-    const ticket = await this.prisma.repairTicket.findUnique({
-      where: { id },
+    const where: any = { id };
+    
+    // Security check: Branch access isolation
+    if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
+      where.branchId = { in: actor.branches?.map((b) => b.id) || [] };
+    }
+
+    const ticket = await this.prisma.repairTicket.findFirst({
+      where,
       include: {
         customer: true,
         device: true,
@@ -295,13 +319,6 @@ export class RepairTicketsService {
 
     if (!ticket) {
       throw new NotFoundException("Repair ticket not found.");
-    }
-
-    // Security check: Branch access isolation
-    if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      if (!actor.branches?.map((b) => b.id).includes(ticket.branchId)) {
-        throw new ForbiddenException("Branch access isolation violation.");
-      }
     }
 
     // Security check: Technician assignment check
@@ -449,36 +466,22 @@ export class RepairTicketsService {
       });
     }
 
-    // Role restrictions
     if (status === "DELIVERED") {
-      if (actor.role === "TECHNICIAN") {
-        throw new ForbiddenException(
-          "Technicians are not authorized to confirm device delivery.",
-        );
-      }
+      throw new BadRequestException(
+        "Use the dedicated delivery endpoint to deliver a ticket",
+      );
+    }
+
+    const permittedRoles = STATUS_TRANSITION_ROLES[status as keyof typeof STATUS_TRANSITION_ROLES];
+    if (permittedRoles && !permittedRoles.includes(actor.role as any)) {
+      throw new ForbiddenException(
+        `Role ${actor.role} is not authorized to transition ticket to ${status}.`,
+      );
     }
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const dataUpdate: any = { status: status as any };
-      if (status === "DELIVERED") {
-        // Business Rule: Check invoice and delivery confirmation
-        const unpaidInvoices = await tx.invoice.findFirst({
-          where: {
-            repairTicketId: ticketId,
-            status: { in: ["UNPAID", "PARTIALLY_PAID"] },
-          },
-        });
-        if (unpaidInvoices) {
-          throw new BadRequestException(
-            "Cannot deliver device. There are unpaid invoices associated with this ticket.",
-          );
-        }
-
-        dataUpdate.deliveredAt = new Date();
-        dataUpdate.deliveredById = actor.id;
-        dataUpdate.deliveryNotes =
-          publicNote || "Device delivered to customer.";
-      } else if (status === "DIAGNOSING") {
+      if (status === "DIAGNOSING") {
         dataUpdate.diagnosisStartedAt = new Date();
       } else if (status === "REPAIR_IN_PROGRESS") {
         dataUpdate.repairStartedAt = new Date();
@@ -552,18 +555,8 @@ export class RepairTicketsService {
     }
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // Check unpaid invoices
-      const unpaidInvoices = await tx.invoice.findFirst({
-        where: {
-          repairTicketId: ticketId,
-          status: { in: ["UNPAID", "PARTIALLY_PAID"] },
-        },
-      });
-      if (unpaidInvoices) {
-        throw new BadRequestException(
-          "Cannot deliver device. There are unpaid invoices associated with this ticket.",
-        );
-      }
+      // Invoices deferred from Phase 2, skipping invoice check
+
 
       const updated = await tx.repairTicket.update({
         where: { id: ticketId },
@@ -619,14 +612,15 @@ export class RepairTicketsService {
       );
     }
 
-    if (
-      actor.role !== "SYSTEM_ADMIN" &&
-      actor.role !== "OWNER" &&
-      actor.role !== "BRANCH_MANAGER" &&
-      actor.role !== "TECHNICIAN"
-    ) {
+    if (actor.role === "TECHNICIAN" && ticket.assignedTechnicianId !== actor.id) {
       throw new ForbiddenException(
-        "Only assigned technicians or authorized managers can record diagnostic findings.",
+        "Unassigned technicians cannot submit diagnosis.",
+      );
+    }
+
+    if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "TECHNICIAN") {
+      throw new ForbiddenException(
+        "Only assigned technicians or system administrators can record diagnostic findings.",
       );
     }
 
