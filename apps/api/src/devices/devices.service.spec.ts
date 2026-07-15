@@ -112,10 +112,7 @@ describe("DevicesService", () => {
     });
 
     it("should fail if customer is deleted", async () => {
-      mockPrismaService.customer.findFirst.mockResolvedValue({
-        id: "cust-1",
-        deletedAt: new Date(),
-      });
+      mockPrismaService.customer.findFirst.mockResolvedValue(null);
 
       const dto = {
         category: "Mobile phone" as const,
