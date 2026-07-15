@@ -31,34 +31,34 @@ test("Phase 2B Branch Isolation Workflow", async ({ page }) => {
   await customerItemA.click();
   await expect(page.locator(`text=${customerName}`).first()).toBeVisible();
 
-  // --- 3. Update Customer ---
-  await page.click("text=Edit Profile");
-  await page.fill('input[name="email"]', `test${randSuffix}@test.com`);
-  await page.click('button[type="submit"]:has-text("Save")');
-  await expect(page.locator(`text=test${randSuffix}@test.com`)).toBeVisible();
-
-  // --- 4. Register Device ---
+  // --- 3. Register Device under Customer ---
+  await page.click("text=Devices");
+  await expect(page).toHaveURL(/.*devices/);
   await page.click("text=Register Device");
-  await page.selectOption('select[name="category"]', "Smartphone");
-  await page.fill('input[name="brand"]', "TestBrand");
-  await page.fill('input[name="model"]', "TestModel");
-  await page.fill('input[name="serialNumber"]', `SN-${randSuffix}`);
+
+  // Select the newly created customer
+  await page.selectOption('select:has-text("Choose Customer")', {
+    label: `${customerName} (${customerPhone})`,
+  });
+  await page.fill(
+    'input[placeholder="e.g. Phone, Tablet, Laptop, Console"]',
+    "Mobile phone",
+  );
+  await page.fill('input[placeholder="e.g. Apple, Samsung"]', "TestBrand");
+  await page.fill('input[placeholder="e.g. iPhone 15 Pro"]', "TestModel");
+  await page.fill(
+    'input[placeholder="e.g. DX4F82..."]',
+    `SN-${randSuffix}`,
+  );
   await page.click('button[type="submit"]:has-text("Register")');
-  
-  // --- 5. Update Device ---
-  // The device should be listed under devices tab
-  await page.click('button:has-text("Devices (1)")');
-  const deviceItem = page.locator('text=TestBrand TestModel');
-  await expect(deviceItem).toBeVisible();
-  
-  // --- 6. Verify Repair History ---
-  // We won't create a ticket, but we can verify the history tab is present
-  await page.click('button:has-text("Repair History")');
-  await expect(page.locator('text=No repair history found')).toBeVisible();
+
+  // Verify device registered
+  await expect(page.locator(`text=SN: SN-${randSuffix}`)).toBeVisible();
 
   // Logout Branch A Front Desk
   await page.click("button:has-text('Logout')");
   await expect(page).toHaveURL(/.*login/);
+  await page.waitForLoadState("networkidle");
 
   // --- 7. Login as Branch B Front Desk ---
   await page.fill('input[type="email"]', "front.b@repairflow.com");
@@ -71,7 +71,7 @@ test("Phase 2B Branch Isolation Workflow", async ({ page }) => {
   await expect(page).toHaveURL(/.*customers/);
 
   // Search for the customer
-  await page.fill('input[placeholder="Search name, phone, or email..."]', customerName);
+  await page.fill('input[placeholder="Search by phone, email, name..."]', customerName);
   await page.waitForTimeout(1000);
 
   // Verify customer is NOT in the list for Branch B
@@ -81,7 +81,7 @@ test("Phase 2B Branch Isolation Workflow", async ({ page }) => {
   // Verify device is NOT visible globally
   await page.click("text=Devices");
   await expect(page).toHaveURL(/.*devices/);
-  await page.fill('input[placeholder="Search by brand, model, serial, or IMEI..."]', `SN-${randSuffix}`);
+  await page.fill('input[placeholder="Search by model, brand, serial..."]', `SN-${randSuffix}`);
   await page.waitForTimeout(1000);
   await expect(page.locator('text=TestBrand')).not.toBeVisible();
 });

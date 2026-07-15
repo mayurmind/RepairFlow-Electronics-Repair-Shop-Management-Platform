@@ -86,6 +86,7 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
   // --- 5. Logout Front Desk ---
   await page.click("button:has-text('Logout')");
   await expect(page).toHaveURL(/.*login/);
+  await page.waitForLoadState("networkidle");
 
   // --- 6. Login as Manager ---
   await page.fill('input[type="email"]', "manager.a@repairflow.com");
@@ -110,6 +111,7 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
   // Logout Manager
   await page.click("button:has-text('Logout')");
   await expect(page).toHaveURL(/.*login/);
+  await page.waitForLoadState("networkidle");
 
   // --- 7. Login as Technician ---
   await page.fill('input[type="email"]', "tech.a1@repairflow.com");

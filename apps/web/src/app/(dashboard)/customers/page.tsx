@@ -24,7 +24,7 @@ import {
 import { toast, Toaster } from "sonner";
 
 export default function CustomersPage() {
-  const { user } = useAuth();
+  const { user, activeBranchId } = useAuth();
   const queryClient = useQueryClient();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,6 +61,7 @@ export default function CustomersPage() {
   const createForm = useForm({
     resolver: zodResolver(createCustomerSchema),
     defaultValues: {
+      branchId: "",
       fullName: "",
       phone: "",
       alternatePhone: "",
@@ -122,7 +123,10 @@ export default function CustomersPage() {
           </p>
         </div>
         <button
-          onClick={() => setIsCreateOpen(true)}
+          onClick={() => {
+            createForm.setValue("branchId", activeBranchId || "");
+            setIsCreateOpen(true);
+          }}
           className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-slate-800 transition-colors shadow-sm"
         >
           <Plus className="w-4 h-4" /> Add Customer
