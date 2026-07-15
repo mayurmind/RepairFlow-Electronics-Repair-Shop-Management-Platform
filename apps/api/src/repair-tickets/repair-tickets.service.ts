@@ -690,6 +690,20 @@ export class RepairTicketsService {
                 changedById: actor.id,
               },
             });
+
+            await this.auditLogs.createLog(
+              tx,
+              actor.id,
+              ticket.branchId,
+              "UPDATE_TICKET_STATUS",
+              "RepairTicket",
+              ticketId,
+              { status: ticket.status },
+              {
+                status: newStatus,
+                source: "DIAGNOSIS_COMPLETION",
+              },
+            );
           }
         }
 

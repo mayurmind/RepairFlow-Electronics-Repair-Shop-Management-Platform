@@ -253,17 +253,23 @@ export default function TicketsPage() {
         `/repair-tickets/${data.ticketId}/diagnosis`,
         data.diagnosis,
       ),
-      onSuccess: (_, variables) => {
+      onSuccess: async (_, variables) => {
         queryClient.invalidateQueries({ queryKey: ["tickets"] });
         queryClient.invalidateQueries({ queryKey: ["ticket-timeline"] });
         toast.success("Diagnosis recorded successfully!");
         setIsDiagnosisModalOpen(false);
         diagnosisForm.reset();
         if (selectedTicket) {
-          setSelectedTicket((prev: any) => ({
-            ...prev,
-            status: variables.diagnosis.status || prev.status,
-          }));
+          try {
+            const res: any = await apiClient.get(
+              `/repair-tickets/${variables.ticketId}`
+            );
+            if (res?.data) {
+              setSelectedTicket(res.data);
+            }
+          } catch (err) {
+            console.error("Failed to refetch ticket after diagnosis", err);
+          }
         }
       },
     onError: (err: any) => {

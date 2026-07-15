@@ -76,6 +76,7 @@ describe("RepairTicketsService", () => {
     invoice: {
       findFirst: jest.fn(),
     },
+    $transaction: jest.fn((callback) => callback(mockPrismaService)),
     diagnosis: {
       findFirst: jest.fn(),
       create: jest.fn(),
@@ -312,6 +313,132 @@ describe("RepairTicketsService", () => {
       await expect(
         service.updateStatus("ticket-1", { status: "DIAGNOSING" }, mockActor),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe("addDiagnosis", () => {
+    it("should update ticket status, history, and create audit logs when feasibility is REPAIRABLE", async () => {
+      const ticket = {
+        id: "ticket-1",
+        status: "DIAGNOSING",
+        branchId: mockBranchId,
+        assignedTechnicianId: mockActorId,
+      };
+      const diagnosis = {
+        id: "diag-1",
+        repairFeasibility: "REPAIRABLE",
+      };
+
+      mockPrismaService.repairTicket.findUnique.mockResolvedValue(ticket);
+      mockPrismaService.diagnosis.findFirst.mockResolvedValue(null);
+      mockPrismaService.diagnosis.create.mockResolvedValue(diagnosis);
+
+      const technicianActor = { ...mockActor, role: "TECHNICIAN" as any };
+
+      await service.addDiagnosis(
+        "ticket-1",
+        {
+          faultCategory: "Screen",
+          diagnosticFindings: "Broken screen",
+          recommendedRepair: "Replace screen",
+          repairFeasibility: "REPAIRABLE",
+        },
+        technicianActor,
+      );
+
+      // Verify ticket update
+      expect(mockPrismaService.repairTicket.update).toHaveBeenCalledWith({
+        where: { id: "ticket-1" },
+        data: { status: "WAITING_FOR_APPROVAL" },
+      });
+
+      // Verify status history
+      expect(mockPrismaService.ticketStatusHistory.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          repairTicketId: "ticket-1",
+          previousStatus: "DIAGNOSING",
+          newStatus: "WAITING_FOR_APPROVAL",
+        }),
+      });
+
+      // Verify audit logs
+      expect(mockAuditLogsService.createLog).toHaveBeenCalledWith(
+        expect.anything(),
+        technicianActor.id,
+        ticket.branchId,
+        "UPDATE_TICKET_STATUS",
+        "RepairTicket",
+        "ticket-1",
+        { status: "DIAGNOSING" },
+        { status: "WAITING_FOR_APPROVAL", source: "DIAGNOSIS_COMPLETION" },
+      );
+      expect(mockAuditLogsService.createLog).toHaveBeenCalledWith(
+        expect.anything(),
+        technicianActor.id,
+        ticket.branchId,
+        "ADD_DIAGNOSIS",
+        "Diagnosis",
+        "diag-1",
+        null,
+        diagnosis,
+      );
+    });
+
+    it("should update ticket status, history, and create audit logs when feasibility is UNREPAIRABLE", async () => {
+      const ticket = {
+        id: "ticket-1",
+        status: "DIAGNOSING",
+        branchId: mockBranchId,
+        assignedTechnicianId: mockActorId,
+      };
+      const diagnosis = {
+        id: "diag-1",
+        repairFeasibility: "UNREPAIRABLE",
+      };
+
+      mockPrismaService.repairTicket.findUnique.mockResolvedValue(ticket);
+      mockPrismaService.diagnosis.findFirst.mockResolvedValue(null);
+      mockPrismaService.diagnosis.create.mockResolvedValue(diagnosis);
+
+      const technicianActor = { ...mockActor, role: "TECHNICIAN" as any };
+
+      await service.addDiagnosis(
+        "ticket-1",
+        {
+          faultCategory: "Logic Board",
+          diagnosticFindings: "Logic board fried",
+          recommendedRepair: "Replace logic board",
+          repairFeasibility: "UNREPAIRABLE",
+        },
+        technicianActor,
+      );
+
+      // Verify ticket update
+      expect(mockPrismaService.repairTicket.update).toHaveBeenCalledWith({
+        where: { id: "ticket-1" },
+        data: { status: "UNREPAIRABLE" },
+      });
+
+      // Verify status history
+      expect(mockPrismaService.ticketStatusHistory.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          repairTicketId: "ticket-1",
+          previousStatus: "DIAGNOSING",
+          newStatus: "UNREPAIRABLE",
+        }),
+      });
+
+      // Verify audit logs
+      expect(mockAuditLogsService.createLog).toHaveBeenCalledWith(
+        expect.anything(),
+        technicianActor.id,
+        ticket.branchId,
+        "UPDATE_TICKET_STATUS",
+        "RepairTicket",
+        "ticket-1",
+        { status: "DIAGNOSING" },
+        { status: "UNREPAIRABLE", source: "DIAGNOSIS_COMPLETION" },
+      );
     });
   });
 });
