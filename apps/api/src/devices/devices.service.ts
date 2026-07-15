@@ -59,46 +59,50 @@ export class DevicesService {
       notes,
     } = parsed.data;
 
-
-
     try {
-      return await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const device = await tx.device.create({
-          data: {
-            branchId: customer.branchId,
-            customerId,
-            category,
-            brand,
-            model,
-            serialNumber: serialNumber || null,
-            imeiNumber: imeiNumber || null,
-            colour: colour || null,
-            variant: variant || null,
-            notes: notes || null,
-          },
-        });
+      return await this.prisma.$transaction(
+        async (tx: Prisma.TransactionClient) => {
+          const device = await tx.device.create({
+            data: {
+              branchId: customer.branchId,
+              customerId,
+              category,
+              brand,
+              model,
+              serialNumber: serialNumber || null,
+              imeiNumber: imeiNumber || null,
+              colour: colour || null,
+              variant: variant || null,
+              notes: notes || null,
+            },
+          });
 
-        await this.auditLogs.createLog(
-          tx,
-          actor.id,
-          customer.branchId,
-          "REGISTER_DEVICE",
-          "Device",
-          device.id,
-          null,
-          device,
-        );
+          await this.auditLogs.createLog(
+            tx,
+            actor.id,
+            customer.branchId,
+            "REGISTER_DEVICE",
+            "Device",
+            device.id,
+            null,
+            device,
+          );
 
-        return device;
-      });
+          return device;
+        },
+      );
     } catch (error: any) {
       if (error.code === "P2002") {
         const target = error.meta?.target as string[];
         if (target?.includes("serialNumber")) {
-          throw new ConflictException("Device serial number already exists in this branch");
+          throw new ConflictException(
+            "Device serial number already exists in this branch",
+          );
         }
         if (target?.includes("imeiNumber")) {
-          throw new ConflictException("Device IMEI already exists in this branch");
+          throw new ConflictException(
+            "Device IMEI already exists in this branch",
+          );
         }
       }
       throw error;
@@ -200,35 +204,39 @@ export class DevicesService {
 
     const device = await this.findOne(id, actor);
 
-
-
     try {
-      return await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const updated = await tx.device.update({
-          where: { id },
-          data: parsed.data as any,
-        });
+      return await this.prisma.$transaction(
+        async (tx: Prisma.TransactionClient) => {
+          const updated = await tx.device.update({
+            where: { id },
+            data: parsed.data as any,
+          });
 
-        await this.auditLogs.createLog(
-          tx,
-          actor.id,
-          device.branchId,
-          "UPDATE_DEVICE",
-          "Device",
-          id,
-          device,
-          updated,
-        );
-        return updated;
-      });
+          await this.auditLogs.createLog(
+            tx,
+            actor.id,
+            device.branchId,
+            "UPDATE_DEVICE",
+            "Device",
+            id,
+            device,
+            updated,
+          );
+          return updated;
+        },
+      );
     } catch (error: any) {
       if (error.code === "P2002") {
         const target = error.meta?.target as string[];
         if (target?.includes("serialNumber")) {
-          throw new ConflictException("Device serial number already exists in this branch");
+          throw new ConflictException(
+            "Device serial number already exists in this branch",
+          );
         }
         if (target?.includes("imeiNumber")) {
-          throw new ConflictException("Device IMEI already exists in this branch");
+          throw new ConflictException(
+            "Device IMEI already exists in this branch",
+          );
         }
       }
       throw error;

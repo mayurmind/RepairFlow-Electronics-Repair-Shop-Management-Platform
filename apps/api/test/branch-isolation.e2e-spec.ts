@@ -134,7 +134,7 @@ describe("Branch Isolation Workflow (e2e)", () => {
       where: { id: { in: [branch1Id, branch2Id, branch3InactiveId] } },
     });
     await prisma.user.deleteMany({
-      where: { id: actorUserId }
+      where: { id: actorUserId },
     });
     await app.close();
   });
@@ -266,7 +266,7 @@ describe("Branch Isolation Workflow (e2e)", () => {
           brand: "Apple",
           model: "iPhone 13",
           serialNumber: "SN123",
-          imeiNumber: "123456789012345"
+          imeiNumber: "123456789012345",
         });
 
       if (res.status !== 201) console.log(res.body);
@@ -325,7 +325,7 @@ describe("Branch Isolation Workflow (e2e)", () => {
     it("should reject ticket creation when customer and device belong to a different branch", async () => {
       // Actor has access to branch 1, but attempts to create a ticket in branch 1
       // using customer and device from branch 2
-      
+
       // First get a device ID from branch 2
       currentActorBranches = [{ id: branch2Id }];
       const resCreate = await request(app.getHttpServer())
@@ -371,7 +371,7 @@ describe("Branch Isolation Workflow (e2e)", () => {
           model: "Zenbook",
         });
       const device2Id = resCreate.body.data.id;
-      
+
       currentActorBranches = [{ id: branch1Id }];
       const res = await request(app.getHttpServer()).get(
         `/devices/${device2Id}/repair-history`,

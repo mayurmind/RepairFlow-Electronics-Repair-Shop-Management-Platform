@@ -43,14 +43,24 @@ const VALID_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
 
 const STATUS_TRANSITION_ROLES = {
   DIAGNOSING: ["TECHNICIAN", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
-  WAITING_FOR_APPROVAL: ["TECHNICIAN", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
+  WAITING_FOR_APPROVAL: [
+    "TECHNICIAN",
+    "BRANCH_MANAGER",
+    "OWNER",
+    "SYSTEM_ADMIN",
+  ],
   APPROVED: ["FRONT_DESK", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
   REJECTED: ["FRONT_DESK", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
   CANCELLED: ["FRONT_DESK", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
   REPAIR_IN_PROGRESS: ["TECHNICIAN", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
   PARTS_REQUIRED: ["TECHNICIAN", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
   UNREPAIRABLE: ["TECHNICIAN", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
-  READY_FOR_COLLECTION: ["TECHNICIAN", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
+  READY_FOR_COLLECTION: [
+    "TECHNICIAN",
+    "BRANCH_MANAGER",
+    "OWNER",
+    "SYSTEM_ADMIN",
+  ],
   DELIVERED: ["FRONT_DESK", "BRANCH_MANAGER", "OWNER", "SYSTEM_ADMIN"],
 } as const;
 
@@ -297,7 +307,7 @@ export class RepairTicketsService {
 
   async findOne(id: string, actor: AuthenticatedUser) {
     const where: any = { id };
-    
+
     // Security check: Branch access isolation
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
       where.branchId = { in: actor.branches?.map((b) => b.id) || [] };
@@ -472,7 +482,8 @@ export class RepairTicketsService {
       );
     }
 
-    const permittedRoles = STATUS_TRANSITION_ROLES[status as keyof typeof STATUS_TRANSITION_ROLES];
+    const permittedRoles =
+      STATUS_TRANSITION_ROLES[status as keyof typeof STATUS_TRANSITION_ROLES];
     if (permittedRoles && !permittedRoles.includes(actor.role as any)) {
       throw new ForbiddenException(
         `Role ${actor.role} is not authorized to transition ticket to ${status}.`,
@@ -557,7 +568,6 @@ export class RepairTicketsService {
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Invoices deferred from Phase 2, skipping invoice check
 
-
       const updated = await tx.repairTicket.update({
         where: { id: ticketId },
         data: {
@@ -612,7 +622,10 @@ export class RepairTicketsService {
       );
     }
 
-    if (actor.role === "TECHNICIAN" && ticket.assignedTechnicianId !== actor.id) {
+    if (
+      actor.role === "TECHNICIAN" &&
+      ticket.assignedTechnicianId !== actor.id
+    ) {
       throw new ForbiddenException(
         "Unassigned technicians cannot submit diagnosis.",
       );

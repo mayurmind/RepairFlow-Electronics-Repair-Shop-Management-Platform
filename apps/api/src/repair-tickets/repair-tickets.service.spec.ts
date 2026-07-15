@@ -45,20 +45,58 @@ describe("RepairTicketsService", () => {
       findUnique: jest.fn(),
     },
     customer: {
-      findFirst: jest.fn().mockResolvedValue({ id: "customer-id", branchId: "11111111-1111-1111-1111-111111111111" }),
-      findUnique: jest.fn().mockResolvedValue({ id: "customer-id", branchId: "11111111-1111-1111-1111-111111111111" }),
+      findFirst: jest.fn().mockResolvedValue({
+        id: "customer-id",
+        branchId: "11111111-1111-1111-1111-111111111111",
+      }),
+      findUnique: jest.fn().mockResolvedValue({
+        id: "customer-id",
+        branchId: "11111111-1111-1111-1111-111111111111",
+      }),
     },
     device: {
-      findFirst: jest.fn().mockResolvedValue({ id: "device-id", branchId: "11111111-1111-1111-1111-111111111111", customerId: "22222222-2222-2222-2222-222222222222" }),
-      findUnique: jest.fn().mockResolvedValue({ id: "device-id", branchId: "11111111-1111-1111-1111-111111111111", customerId: "22222222-2222-2222-2222-222222222222" }),
+      findFirst: jest.fn().mockResolvedValue({
+        id: "device-id",
+        branchId: "11111111-1111-1111-1111-111111111111",
+        customerId: "22222222-2222-2222-2222-222222222222",
+      }),
+      findUnique: jest.fn().mockResolvedValue({
+        id: "device-id",
+        branchId: "11111111-1111-1111-1111-111111111111",
+        customerId: "22222222-2222-2222-2222-222222222222",
+      }),
     },
     user: {
       findFirst: jest.fn(),
     },
     repairTicket: {
-      findUnique: jest.fn().mockImplementation(() => Promise.resolve({ id: "ticket-1", status: "RECEIVED", branchId: "11111111-1111-1111-1111-111111111111", assignedTechnicianId: mockActorId, device: { brand: 'Apple', model: 'iPhone 13' } })),
-      findFirst: jest.fn().mockImplementation(() => Promise.resolve({ id: "ticket-1", status: "RECEIVED", branchId: "11111111-1111-1111-1111-111111111111", assignedTechnicianId: mockActorId, device: { brand: 'Apple', model: 'iPhone 13' } })),
-      create: jest.fn().mockImplementation(() => Promise.resolve({ id: "ticket-1", status: "RECEIVED", branchId: "11111111-1111-1111-1111-111111111111", assignedTechnicianId: mockActorId, device: { brand: 'Apple', model: 'iPhone 13' } })),
+      findUnique: jest.fn().mockImplementation(() =>
+        Promise.resolve({
+          id: "ticket-1",
+          status: "RECEIVED",
+          branchId: "11111111-1111-1111-1111-111111111111",
+          assignedTechnicianId: mockActorId,
+          device: { brand: "Apple", model: "iPhone 13" },
+        }),
+      ),
+      findFirst: jest.fn().mockImplementation(() =>
+        Promise.resolve({
+          id: "ticket-1",
+          status: "RECEIVED",
+          branchId: "11111111-1111-1111-1111-111111111111",
+          assignedTechnicianId: mockActorId,
+          device: { brand: "Apple", model: "iPhone 13" },
+        }),
+      ),
+      create: jest.fn().mockImplementation(() =>
+        Promise.resolve({
+          id: "ticket-1",
+          status: "RECEIVED",
+          branchId: "11111111-1111-1111-1111-111111111111",
+          assignedTechnicianId: mockActorId,
+          device: { brand: "Apple", model: "iPhone 13" },
+        }),
+      ),
       update: jest.fn(),
       count: jest.fn(),
       findMany: jest.fn(),
@@ -315,7 +353,11 @@ describe("RepairTicketsService", () => {
       mockPrismaService.repairTicket.findFirst.mockResolvedValue(ticket);
 
       await expect(
-        service.updateStatus("ticket-1", { status: "DIAGNOSING" }, { ...mockActor, role: "TECHNICIAN" as any }),
+        service.updateStatus(
+          "ticket-1",
+          { status: "DIAGNOSING" },
+          { ...mockActor, role: "TECHNICIAN" as any },
+        ),
       ).rejects.toThrow(BadRequestException);
     });
   });

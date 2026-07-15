@@ -54,43 +54,47 @@ export class CustomersService {
       }
     }
 
-
-
     try {
-      return await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const customer = await tx.customer.create({
-          data: {
+      return await this.prisma.$transaction(
+        async (tx: Prisma.TransactionClient) => {
+          const customer = await tx.customer.create({
+            data: {
+              branchId,
+              fullName,
+              phone,
+              alternatePhone,
+              email: email || null,
+              address: address || null,
+              notes: notes || null,
+            },
+          });
+
+          await this.auditLogs.createLog(
+            tx,
+            actor.id,
             branchId,
-            fullName,
-            phone,
-            alternatePhone,
-            email: email || null,
-            address: address || null,
-            notes: notes || null,
-          },
-        });
+            "CREATE_CUSTOMER",
+            "Customer",
+            customer.id,
+            null,
+            customer,
+          );
 
-        await this.auditLogs.createLog(
-          tx,
-          actor.id,
-          branchId,
-          "CREATE_CUSTOMER",
-          "Customer",
-          customer.id,
-          null,
-          customer,
-        );
-
-        return customer;
-      });
+          return customer;
+        },
+      );
     } catch (error: any) {
       if (error.code === "P2002") {
         const target = error.meta?.target as string[];
         if (target?.includes("phone")) {
-          throw new ConflictException("Customer phone already exists in this branch");
+          throw new ConflictException(
+            "Customer phone already exists in this branch",
+          );
         }
         if (target?.includes("email")) {
-          throw new ConflictException("Customer email already exists in this branch");
+          throw new ConflictException(
+            "Customer email already exists in this branch",
+          );
         }
       }
       throw error;
@@ -202,32 +206,38 @@ export class CustomersService {
     const customer = await this.findOne(id, actor);
 
     try {
-      return await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const updated = await tx.customer.update({
-          where: { id },
-          data: parsed.data as any,
-        });
+      return await this.prisma.$transaction(
+        async (tx: Prisma.TransactionClient) => {
+          const updated = await tx.customer.update({
+            where: { id },
+            data: parsed.data as any,
+          });
 
-        await this.auditLogs.createLog(
-          tx,
-          actor.id,
-          customer.branchId,
-          "UPDATE_CUSTOMER",
-          "Customer",
-          id,
-          customer,
-          updated,
-        );
-        return updated;
-      });
+          await this.auditLogs.createLog(
+            tx,
+            actor.id,
+            customer.branchId,
+            "UPDATE_CUSTOMER",
+            "Customer",
+            id,
+            customer,
+            updated,
+          );
+          return updated;
+        },
+      );
     } catch (error: any) {
       if (error.code === "P2002") {
         const target = error.meta?.target as string[];
         if (target?.includes("phone")) {
-          throw new ConflictException("Customer phone already exists in this branch");
+          throw new ConflictException(
+            "Customer phone already exists in this branch",
+          );
         }
         if (target?.includes("email")) {
-          throw new ConflictException("Customer email already exists in this branch");
+          throw new ConflictException(
+            "Customer email already exists in this branch",
+          );
         }
       }
       throw error;

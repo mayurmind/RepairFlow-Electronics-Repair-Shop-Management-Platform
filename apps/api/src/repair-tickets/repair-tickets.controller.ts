@@ -194,11 +194,7 @@ export class RepairTicketsController {
     @Body() body: DeliverTicketDto,
     @CurrentUser() actor: AuthenticatedUser,
   ) {
-    const ticket = await this.ticketsService.deliverTicket(
-      id,
-      body,
-      actor,
-    );
+    const ticket = await this.ticketsService.deliverTicket(id, body, actor);
     return { success: true as const, data: ticket };
   }
 }

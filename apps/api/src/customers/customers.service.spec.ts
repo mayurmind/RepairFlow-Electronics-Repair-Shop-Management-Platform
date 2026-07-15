@@ -3,7 +3,11 @@ import { CustomersService } from "./customers.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
 import type { Prisma } from "@prisma/client";
-import { BadRequestException, NotFoundException, ConflictException } from "@nestjs/common";
+import {
+  BadRequestException,
+  NotFoundException,
+  ConflictException,
+} from "@nestjs/common";
 
 describe("CustomersService", () => {
   let service: CustomersService;
@@ -51,7 +55,10 @@ describe("CustomersService", () => {
 
     service = module.get<CustomersService>(CustomersService);
     prisma = module.get<PrismaService>(PrismaService);
-    mockPrismaService.branch.findUnique.mockResolvedValue({ id: "11111111-1111-1111-1111-111111111111", isActive: true });
+    mockPrismaService.branch.findUnique.mockResolvedValue({
+      id: "11111111-1111-1111-1111-111111111111",
+      isActive: true,
+    });
     jest.clearAllMocks();
     mockPrismaService.repairTicket.findMany.mockResolvedValue([]);
     mockPrismaService.repairTicket.count.mockResolvedValue(0);

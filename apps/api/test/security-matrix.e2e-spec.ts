@@ -72,9 +72,30 @@ describe("Security Matrix (e2e)", () => {
 
     await prisma.user.createMany({
       data: [
-        { id: frontDeskId, email: "fd@s.com", passwordHash: "h", fullName: "FD", role: "FRONT_DESK", status: "ACTIVE" },
-        { id: techAssignedId, email: "ta@s.com", passwordHash: "h", fullName: "TA", role: "TECHNICIAN", status: "ACTIVE" },
-        { id: techUnassignedId, email: "tu@s.com", passwordHash: "h", fullName: "TU", role: "TECHNICIAN", status: "ACTIVE" },
+        {
+          id: frontDeskId,
+          email: "fd@s.com",
+          passwordHash: "h",
+          fullName: "FD",
+          role: "FRONT_DESK",
+          status: "ACTIVE",
+        },
+        {
+          id: techAssignedId,
+          email: "ta@s.com",
+          passwordHash: "h",
+          fullName: "TA",
+          role: "TECHNICIAN",
+          status: "ACTIVE",
+        },
+        {
+          id: techUnassignedId,
+          email: "tu@s.com",
+          passwordHash: "h",
+          fullName: "TU",
+          role: "TECHNICIAN",
+          status: "ACTIVE",
+        },
       ],
     });
 
@@ -109,7 +130,7 @@ describe("Security Matrix (e2e)", () => {
         branchId,
         fullName: "Security Cust",
         phone: "+1112223334",
-      }
+      },
     });
     customerId = customer.id;
 
@@ -121,7 +142,7 @@ describe("Security Matrix (e2e)", () => {
         category: "Mobile",
         brand: "Sec",
         model: "Phone",
-      }
+      },
     });
     deviceId = device.id;
   });
@@ -138,7 +159,7 @@ describe("Security Matrix (e2e)", () => {
     await prisma.userBranch.deleteMany({ where: { branchId } });
     await prisma.branch.deleteMany({ where: { id: branchId } });
     await prisma.user.deleteMany({
-      where: { id: { in: [frontDeskId, techAssignedId, techUnassignedId] } }
+      where: { id: { in: [frontDeskId, techAssignedId, techUnassignedId] } },
     });
     await app.close();
   });
@@ -182,12 +203,12 @@ describe("Security Matrix (e2e)", () => {
     currentActorRole = "TECHNICIAN";
     const res = await request(app.getHttpServer())
       .post(`/repair-tickets/${ticketId}/diagnosis`)
-      .send({ 
-        repairFeasibility: "REPAIRABLE", 
+      .send({
+        repairFeasibility: "REPAIRABLE",
         faultCategory: "Hardware",
         diagnosticFindings: "Screen broken",
         recommendedRepair: "Replace screen",
-        internalNotes: "Unassigned" 
+        internalNotes: "Unassigned",
       });
     expect(res.status).toBe(403);
     expect(res.body.message).toContain("not assigned");
@@ -207,12 +228,12 @@ describe("Security Matrix (e2e)", () => {
     currentActorRole = "TECHNICIAN";
     const res = await request(app.getHttpServer())
       .post(`/repair-tickets/${ticketId}/diagnosis`)
-      .send({ 
-        repairFeasibility: "REPAIRABLE", 
+      .send({
+        repairFeasibility: "REPAIRABLE",
         faultCategory: "Hardware",
         diagnosticFindings: "Screen broken",
         recommendedRepair: "Replace screen",
-        internalNotes: "Assigned Tech" 
+        internalNotes: "Assigned Tech",
       });
     expect(res.status).toBe(201);
   });
@@ -240,8 +261,10 @@ describe("Security Matrix (e2e)", () => {
   it("technician should set READY_FOR_COLLECTION", async () => {
     currentActorId = techAssignedId;
     currentActorRole = "TECHNICIAN";
-    await request(app.getHttpServer()).post(`/repair-tickets/${ticketId}/status`).send({ status: "REPAIR_IN_PROGRESS" });
-    
+    await request(app.getHttpServer())
+      .post(`/repair-tickets/${ticketId}/status`)
+      .send({ status: "REPAIR_IN_PROGRESS" });
+
     const res = await request(app.getHttpServer())
       .post(`/repair-tickets/${ticketId}/status`)
       .send({ status: "READY_FOR_COLLECTION" });
@@ -281,19 +304,21 @@ describe("Security Matrix (e2e)", () => {
     currentActorRole = "TECHNICIAN";
     const res = await request(app.getHttpServer())
       .post(`/repair-tickets/${ticketId}/diagnosis`)
-      .send({ 
-        repairFeasibility: "UNREPAIRABLE", 
+      .send({
+        repairFeasibility: "UNREPAIRABLE",
         faultCategory: "Hardware",
         diagnosticFindings: "Screen broken",
         recommendedRepair: "Replace screen",
-        internalNotes: "Modify" 
+        internalNotes: "Modify",
       });
     expect(res.status).toBe(400);
     expect(res.body.message).toContain("delivered or cancelled");
   });
 
   it("history queries should show correct audit/timeline size", async () => {
-    const res = await request(app.getHttpServer()).get(`/repair-tickets/${ticketId}/timeline`);
+    const res = await request(app.getHttpServer()).get(
+      `/repair-tickets/${ticketId}/timeline`,
+    );
     expect(res.status).toBe(200);
     // Ticket underwent: RECEIVED -> DIAGNOSING -> WAITING_FOR_APPROVAL -> APPROVED -> REPAIR_IN_PROGRESS -> READY_FOR_COLLECTION -> DELIVERED
     expect(res.body.data.length).toBe(7);
