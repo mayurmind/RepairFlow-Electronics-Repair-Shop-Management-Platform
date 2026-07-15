@@ -31,6 +31,8 @@ describe("DevicesService", () => {
     },
     repairTicket: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
+      count: jest.fn(),
     },
   };
 
@@ -52,6 +54,8 @@ describe("DevicesService", () => {
     jest.clearAllMocks();
 
     mockPrismaService.repairTicket.findMany.mockResolvedValue([]);
+    mockPrismaService.repairTicket.count.mockResolvedValue(0);
+    mockPrismaService.repairTicket.findFirst.mockResolvedValue(null);
 
     mockPrismaService.$transaction = jest.fn(
       async <T>(

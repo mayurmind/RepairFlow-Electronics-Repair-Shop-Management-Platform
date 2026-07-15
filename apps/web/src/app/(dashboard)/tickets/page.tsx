@@ -235,12 +235,12 @@ export default function TicketsPage() {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
       toast.success("Technician assigned successfully!");
       setIsAssignModalOpen(false);
-      if (selectedTicket) {
-        setSelectedTicket((prev: any) => ({
-          ...prev,
-          technicianId: selectedTechId,
-        }));
-      }
+        if (selectedTicket) {
+          setSelectedTicket((prev: any) => ({
+            ...prev,
+            assignedTechnicianId: selectedTechId,
+          }));
+        }
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to assign technician.");
@@ -250,15 +250,22 @@ export default function TicketsPage() {
   const submitDiagnosisMutation = useMutation({
     mutationFn: (data: { ticketId: string; diagnosis: any }) =>
       apiClient.post(
-        `/repair-tickets/${data.ticketId}/diagnose`,
+        `/repair-tickets/${data.ticketId}/diagnosis`,
         data.diagnosis,
       ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tickets"] });
-      toast.success("Diagnosis recorded successfully!");
-      setIsDiagnosisModalOpen(false);
-      diagnosisForm.reset();
-    },
+      onSuccess: (_, variables) => {
+        queryClient.invalidateQueries({ queryKey: ["tickets"] });
+        queryClient.invalidateQueries({ queryKey: ["ticket-timeline"] });
+        toast.success("Diagnosis recorded successfully!");
+        setIsDiagnosisModalOpen(false);
+        diagnosisForm.reset();
+        if (selectedTicket) {
+          setSelectedTicket((prev: any) => ({
+            ...prev,
+            status: variables.diagnosis.status || prev.status,
+          }));
+        }
+      },
     onError: (err: any) => {
       toast.error(err.message || "Failed to save diagnosis.");
     },
@@ -266,13 +273,20 @@ export default function TicketsPage() {
 
   const updateStatusMutation = useMutation({
     mutationFn: (data: { ticketId: string; payload: any }) =>
-      apiClient.patch(`/repair-tickets/${data.ticketId}/status`, data.payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tickets"] });
-      toast.success("Ticket status updated successfully!");
-      setIsStatusModalOpen(false);
-      statusForm.reset();
-    },
+      apiClient.post(`/repair-tickets/${data.ticketId}/status`, data.payload),
+      onSuccess: (res, variables) => {
+        queryClient.invalidateQueries({ queryKey: ["tickets"] });
+        queryClient.invalidateQueries({ queryKey: ["ticket-timeline"] });
+        toast.success("Ticket status updated successfully!");
+        setIsStatusModalOpen(false);
+        statusForm.reset();
+        if (selectedTicket) {
+          setSelectedTicket((prev: any) => ({
+            ...prev,
+            status: variables.payload.status || prev.status,
+          }));
+        }
+      },
     onError: (err: any) => {
       toast.error(err.message || "Status transition denied by state machine.");
     },
@@ -573,50 +587,50 @@ export default function TicketsPage() {
                     <button
                       key={t}
                       id={`status-btn-${t}`}
-                      onClick={() => {
-                        if (
-                          t === "DIAGNOSING" &&
-                          user.role === "TECHNICIAN" &&
-                          selectedTicket.technicianId !== user.id
-                        ) {
-                          toast.error(
-                            "You must be assigned to this ticket to begin diagnosis.",
-                          );
-                          return;
-                        }
-                        if (
-                          t === "DIAGNOSING" &&
-                          !selectedTicket.technicianId
-                        ) {
-                          toast.error(
-                            "Please assign a technician before starting diagnosis.",
-                          );
-                          return;
-                        }
+                        onClick={() => {
+                          if (
+                            t === "DIAGNOSING" &&
+                            user.role === "TECHNICIAN" &&
+                            selectedTicket.assignedTechnicianId !== user.id
+                          ) {
+                            toast.error(
+                              "You must be assigned to this ticket to begin diagnosis.",
+                            );
+                            return;
+                          }
+                          if (
+                            t === "DIAGNOSING" &&
+                            !selectedTicket.assignedTechnicianId
+                          ) {
+                            toast.error(
+                              "Please assign a technician before starting diagnosis.",
+                            );
+                            return;
+                          }
 
-                        // If diagnosing, open diagnostic modal
-                        if (
-                          t === "WAITING_FOR_APPROVAL" ||
-                          (t === "DIAGNOSING" &&
-                            selectedTicket.status === "PARTS_REQUIRED")
-                        ) {
-                          diagnosisForm.setValue(
-                            "repairFeasibility",
-                            "REPAIRABLE",
-                          );
-                          setIsDiagnosisModalOpen(true);
-                        } else {
-                          statusForm.setValue("status", t);
-                          setIsStatusModalOpen(true);
-                        }
-                      }}
+                          // If diagnosing, open diagnostic modal
+                          if (
+                            t === "WAITING_FOR_APPROVAL" ||
+                            (t === "DIAGNOSING" &&
+                              selectedTicket.status === "PARTS_REQUIRED")
+                          ) {
+                            diagnosisForm.setValue(
+                              "repairFeasibility",
+                              "REPAIRABLE",
+                            );
+                            setIsDiagnosisModalOpen(true);
+                          } else {
+                            statusForm.setValue("status", t);
+                            console.log("Setting isStatusModalOpen to TRUE!"); setIsStatusModalOpen(true);
+                          }
+                        }}
                       className="bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors"
                     >
                       {t.replace(/_/g, " ")}
                     </button>
                   ))}
                   {user.role !== "TECHNICIAN" &&
-                    !selectedTicket.technicianId && (
+                    !selectedTicket.assignedTechnicianId && (
                       <button
                         onClick={() => setIsAssignModalOpen(true)}
                         className="flex items-center gap-1 bg-blue-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-blue-500 transition-colors"
@@ -858,7 +872,7 @@ export default function TicketsPage() {
                               {new Date(item.createdAt).toLocaleString()}
                             </span>
                             <span className="text-xs font-bold text-slate-950 mt-1 block">
-                              {item.newStatus.replace(/_/g, " ")}
+                              {item.newStatus}
                             </span>
                             {item.publicNote && (
                               <p className="text-xs text-slate-600 mt-1">
@@ -1210,6 +1224,7 @@ export default function TicketsPage() {
                     {...diagnosisForm.register("repairFeasibility")}
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none"
                   >
+                    <option value="">Choose Feasibility</option>
                     <option value="REPAIRABLE">Repairable</option>
                     <option value="PARTIALLY_REPAIRABLE">
                       Partially Repairable

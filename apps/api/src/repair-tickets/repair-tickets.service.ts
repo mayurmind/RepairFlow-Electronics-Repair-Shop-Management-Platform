@@ -661,27 +661,37 @@ export class RepairTicketsService {
         });
       }
 
-      // If feasibility is UNREPAIRABLE, update status
-      if (
-        parsed.data.repairFeasibility === "UNREPAIRABLE" &&
-        ticket.status === "DIAGNOSING"
-      ) {
-        await tx.repairTicket.update({
-          where: { id: ticketId },
-          data: { status: "UNREPAIRABLE" },
-        });
+        // Update status based on feasibility
+        if (ticket.status === "DIAGNOSING") {
+          let newStatus = null;
+          let publicNote = "";
 
-        await tx.ticketStatusHistory.create({
-          data: {
-            repairTicketId: ticketId,
-            previousStatus: "DIAGNOSING",
-            newStatus: "UNREPAIRABLE",
-            publicNote: "Device was diagnosed as unrepairable.",
-            internalNote: "Diagnostic completion automatic transition.",
-            changedById: actor.id,
-          },
-        });
-      }
+          if (parsed.data.repairFeasibility === "UNREPAIRABLE") {
+            newStatus = "UNREPAIRABLE";
+            publicNote = "Device was diagnosed as unrepairable.";
+          } else if (parsed.data.repairFeasibility === "REPAIRABLE") {
+            newStatus = "WAITING_FOR_APPROVAL";
+            publicNote = "Diagnosis complete. Waiting for customer approval.";
+          }
+
+          if (newStatus) {
+            await tx.repairTicket.update({
+              where: { id: ticketId },
+              data: { status: newStatus as any },
+            });
+    
+            await tx.ticketStatusHistory.create({
+              data: {
+                repairTicketId: ticketId,
+                previousStatus: "DIAGNOSING",
+                newStatus: newStatus as any,
+                publicNote: publicNote,
+                internalNote: "Diagnostic completion automatic transition.",
+                changedById: actor.id,
+              },
+            });
+          }
+        }
 
       await this.auditLogs.createLog(
         tx,

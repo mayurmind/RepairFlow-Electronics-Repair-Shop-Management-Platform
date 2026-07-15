@@ -122,6 +122,10 @@ export class DevicesService {
     const where: any = {};
     const andClauses: any[] = [];
 
+    if (query.customerId) {
+      where.customerId = query.customerId;
+    }
+
     // Branch isolation: limit devices to those owned by accessible customers
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
       andClauses.push({

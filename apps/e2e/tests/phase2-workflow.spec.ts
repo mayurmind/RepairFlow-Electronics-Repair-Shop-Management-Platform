@@ -42,7 +42,7 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
   await page.click('button[type="submit"]:has-text("Register")');
 
   // Verify device registered
-  await expect(page.locator(`text=SN: SN-E2E-${randSuffix.toUpperCase()}`)).toBeVisible();
+  await expect(page.locator(`text=SN: SN-E2E-${randSuffix}`)).toBeVisible();
 
   // --- 4. Create Repair Ticket ---
   await page.click("text=Tickets");
@@ -51,7 +51,7 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
 
   // Select customer and device
   await page.selectOption('select:has-text("Choose Customer")', { label: `${customerName} (${customerPhone})` });
-  await page.selectOption('select:has-text("Choose Device")', { label: `Google Pixel 8 (SN: SN-E2E-${randSuffix.toUpperCase()})` });
+  await page.selectOption('select:has-text("Choose Device")', { label: `Google Pixel 8 (SN: SN-E2E-${randSuffix})` });
   await page.fill('textarea[placeholder="Describe issues in detail..."]', "Screen cracked and completely black");
   await page.click('button[type="submit"]:has-text("Create Ticket")');
 

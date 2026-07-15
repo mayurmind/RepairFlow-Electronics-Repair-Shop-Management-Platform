@@ -14,6 +14,13 @@ import type { TicketPriority } from "@repairflow/shared-types";
 const trimString = ({ value }: { value: unknown }): unknown =>
   typeof value === "string" ? value.trim() : value;
 
+const normalizeOptionalString = ({ value }: { value: unknown }): unknown => {
+  if (value === "" || value === null || value === undefined) {
+    return undefined;
+  }
+  return typeof value === "string" ? value.trim() : value;
+};
+
 export class CreateRepairTicketDto {
   @ApiProperty({ format: "uuid" })
   @IsUUID()
@@ -62,6 +69,7 @@ export class CreateRepairTicketDto {
 
   @ApiPropertyOptional({ type: String, format: "date-time", nullable: true })
   @IsOptional()
+  @Transform(normalizeOptionalString)
   @IsISO8601({ strict: true })
   expectedCompletionAt?: string | null;
 

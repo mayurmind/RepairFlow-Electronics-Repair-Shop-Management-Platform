@@ -15,4 +15,9 @@ export class FindDevicesQueryDto extends PaginationQueryDto {
   @IsString()
   @MaxLength(120)
   search?: string;
+
+  @ApiPropertyOptional({ description: "Filter by customer ID" })
+  @IsOptional()
+  @IsUUID()
+  customerId?: string;
 }

@@ -47,7 +47,7 @@ import { DiagnosisResponseDto } from "./dto/diagnosis-response.dto";
 @ApiBearerAuth()
 @ApiStandardErrors()
 @UseGuards(JwtAuthGuard, RolesGuard, BranchAccessGuard)
-@Controller("tickets")
+@Controller("repair-tickets")
 export class RepairTicketsController {
   constructor(private readonly ticketsService: RepairTicketsService) {}
 
