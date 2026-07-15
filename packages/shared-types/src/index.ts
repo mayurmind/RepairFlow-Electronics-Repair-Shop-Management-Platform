@@ -1,9 +1,20 @@
 // User Roles
-export const USER_ROLES = ["SYSTEM_ADMIN", "OWNER", "BRANCH_MANAGER", "FRONT_DESK", "TECHNICIAN"] as const;
+export const USER_ROLES = [
+  "SYSTEM_ADMIN",
+  "OWNER",
+  "BRANCH_MANAGER",
+  "FRONT_DESK",
+  "TECHNICIAN",
+] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 // User Status
-export const USER_STATUSES = ["ACTIVE", "SUSPENDED", "INVITED", "DISABLED"] as const;
+export const USER_STATUSES = [
+  "ACTIVE",
+  "SUSPENDED",
+  "INVITED",
+  "DISABLED",
+] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
 
 // Repair Ticket Status
@@ -18,7 +29,7 @@ export const TICKET_STATUSES = [
   "REJECTED",
   "UNREPAIRABLE",
   "PARTS_REQUIRED",
-  "CANCELLED"
+  "CANCELLED",
 ] as const;
 export type TicketStatus = (typeof TICKET_STATUSES)[number];
 
@@ -27,11 +38,23 @@ export const TICKET_PRIORITIES = ["LOW", "NORMAL", "HIGH", "URGENT"] as const;
 export type TicketPriority = (typeof TICKET_PRIORITIES)[number];
 
 // Estimate Status
-export const ESTIMATE_STATUSES = ["DRAFT", "SENT", "APPROVED", "REJECTED", "EXPIRED", "CANCELLED"] as const;
+export const ESTIMATE_STATUSES = [
+  "DRAFT",
+  "SENT",
+  "APPROVED",
+  "REJECTED",
+  "EXPIRED",
+  "CANCELLED",
+] as const;
 export type EstimateStatus = (typeof ESTIMATE_STATUSES)[number];
 
 // Estimate Item Type
-export const ESTIMATE_ITEM_TYPES = ["PART", "LABOUR", "SERVICE", "OTHER"] as const;
+export const ESTIMATE_ITEM_TYPES = [
+  "PART",
+  "LABOUR",
+  "SERVICE",
+  "OTHER",
+] as const;
 export type EstimateItemType = (typeof ESTIMATE_ITEM_TYPES)[number];
 
 // Estimate Decision type
@@ -39,11 +62,23 @@ export const ESTIMATE_DECISION_TYPES = ["APPROVED", "REJECTED"] as const;
 export type EstimateDecisionType = (typeof ESTIMATE_DECISION_TYPES)[number];
 
 // Invoice Status
-export const INVOICE_STATUSES = ["UNPAID", "PARTIALLY_PAID", "PAID", "REFUNDED", "VOID"] as const;
+export const INVOICE_STATUSES = [
+  "UNPAID",
+  "PARTIALLY_PAID",
+  "PAID",
+  "REFUNDED",
+  "VOID",
+] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
 
 // Payment Status is mapping directly to InvoiceStatus or similar
-export const PAYMENT_METHODS = ["CASH", "CARD", "UPI", "BANK_TRANSFER", "OTHER"] as const;
+export const PAYMENT_METHODS = [
+  "CASH",
+  "CARD",
+  "UPI",
+  "BANK_TRANSFER",
+  "OTHER",
+] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 // Repair Feasibility
@@ -51,7 +86,7 @@ export const REPAIR_FEASIBILITIES = [
   "REPAIRABLE",
   "PARTIALLY_REPAIRABLE",
   "UNREPAIRABLE",
-  "FURTHER_TESTING_REQUIRED"
+  "FURTHER_TESTING_REQUIRED",
 ] as const;
 export type RepairFeasibility = (typeof REPAIR_FEASIBILITIES)[number];
 
@@ -64,7 +99,7 @@ export const DEVICE_CATEGORIES = [
   "Camera",
   "Desktop computer",
   "Tablet",
-  "Other"
+  "Other",
 ] as const;
 export type DeviceCategory = (typeof DEVICE_CATEGORIES)[number];
 
@@ -75,7 +110,7 @@ export const ATTACHMENT_CATEGORIES = [
   "REPAIR_PHOTO",
   "DOCUMENT",
   "INVOICE",
-  "OTHER"
+  "OTHER",
 ] as const;
 export type AttachmentCategory = (typeof ATTACHMENT_CATEGORIES)[number];
 

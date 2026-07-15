@@ -22,11 +22,7 @@ const normalizePhone = ({ value }: { value: unknown }): unknown => {
   return value;
 };
 
-const normalizeOptionalPhone = ({
-  value,
-}: {
-  value: unknown;
-}): unknown => {
+const normalizeOptionalPhone = ({ value }: { value: unknown }): unknown => {
   if (value === "" || value === null || value === undefined) {
     return undefined;
   }

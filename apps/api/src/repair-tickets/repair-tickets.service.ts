@@ -661,51 +661,51 @@ export class RepairTicketsService {
         });
       }
 
-        // Update status based on feasibility
-        if (ticket.status === "DIAGNOSING") {
-          let newStatus = null;
-          let publicNote = "";
+      // Update status based on feasibility
+      if (ticket.status === "DIAGNOSING") {
+        let newStatus = null;
+        let publicNote = "";
 
-          if (parsed.data.repairFeasibility === "UNREPAIRABLE") {
-            newStatus = "UNREPAIRABLE";
-            publicNote = "Device was diagnosed as unrepairable.";
-          } else if (parsed.data.repairFeasibility === "REPAIRABLE") {
-            newStatus = "WAITING_FOR_APPROVAL";
-            publicNote = "Diagnosis complete. Waiting for customer approval.";
-          }
-
-          if (newStatus) {
-            await tx.repairTicket.update({
-              where: { id: ticketId },
-              data: { status: newStatus as any },
-            });
-    
-            await tx.ticketStatusHistory.create({
-              data: {
-                repairTicketId: ticketId,
-                previousStatus: "DIAGNOSING",
-                newStatus: newStatus as any,
-                publicNote: publicNote,
-                internalNote: "Diagnostic completion automatic transition.",
-                changedById: actor.id,
-              },
-            });
-
-            await this.auditLogs.createLog(
-              tx,
-              actor.id,
-              ticket.branchId,
-              "UPDATE_TICKET_STATUS",
-              "RepairTicket",
-              ticketId,
-              { status: ticket.status },
-              {
-                status: newStatus,
-                source: "DIAGNOSIS_COMPLETION",
-              },
-            );
-          }
+        if (parsed.data.repairFeasibility === "UNREPAIRABLE") {
+          newStatus = "UNREPAIRABLE";
+          publicNote = "Device was diagnosed as unrepairable.";
+        } else if (parsed.data.repairFeasibility === "REPAIRABLE") {
+          newStatus = "WAITING_FOR_APPROVAL";
+          publicNote = "Diagnosis complete. Waiting for customer approval.";
         }
+
+        if (newStatus) {
+          await tx.repairTicket.update({
+            where: { id: ticketId },
+            data: { status: newStatus as any },
+          });
+
+          await tx.ticketStatusHistory.create({
+            data: {
+              repairTicketId: ticketId,
+              previousStatus: "DIAGNOSING",
+              newStatus: newStatus as any,
+              publicNote: publicNote,
+              internalNote: "Diagnostic completion automatic transition.",
+              changedById: actor.id,
+            },
+          });
+
+          await this.auditLogs.createLog(
+            tx,
+            actor.id,
+            ticket.branchId,
+            "UPDATE_TICKET_STATUS",
+            "RepairTicket",
+            ticketId,
+            { status: ticket.status },
+            {
+              status: newStatus,
+              source: "DIAGNOSIS_COMPLETION",
+            },
+          );
+        }
+      }
 
       await this.auditLogs.createLog(
         tx,

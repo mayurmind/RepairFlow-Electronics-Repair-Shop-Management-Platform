@@ -19,7 +19,8 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "cd ../../ && pnpm build:packages && npx turbo run dev --filter=api",
+      command:
+        "cd ../../ && pnpm build:packages && npx turbo run dev --filter=api",
       url: "http://localhost:4000/api/v1/health",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,

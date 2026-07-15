@@ -142,7 +142,9 @@ export default function TicketsPage() {
   const { data: timelineData } = useQuery<any>({
     queryKey: ["ticket-timeline", selectedTicket?.id],
     queryFn: async () => {
-      const res: any = await apiClient.get(`/repair-tickets/${selectedTicket.id}/timeline`);
+      const res: any = await apiClient.get(
+        `/repair-tickets/${selectedTicket.id}/timeline`,
+      );
       return res.data || [];
     },
     enabled: !!selectedTicket?.id && isDetailDrawerOpen,
@@ -235,12 +237,12 @@ export default function TicketsPage() {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
       toast.success("Technician assigned successfully!");
       setIsAssignModalOpen(false);
-        if (selectedTicket) {
-          setSelectedTicket((prev: any) => ({
-            ...prev,
-            assignedTechnicianId: selectedTechId,
-          }));
-        }
+      if (selectedTicket) {
+        setSelectedTicket((prev: any) => ({
+          ...prev,
+          assignedTechnicianId: selectedTechId,
+        }));
+      }
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to assign technician.");
@@ -253,25 +255,25 @@ export default function TicketsPage() {
         `/repair-tickets/${data.ticketId}/diagnosis`,
         data.diagnosis,
       ),
-      onSuccess: async (_, variables) => {
-        queryClient.invalidateQueries({ queryKey: ["tickets"] });
-        queryClient.invalidateQueries({ queryKey: ["ticket-timeline"] });
-        toast.success("Diagnosis recorded successfully!");
-        setIsDiagnosisModalOpen(false);
-        diagnosisForm.reset();
-        if (selectedTicket) {
-          try {
-            const res: any = await apiClient.get(
-              `/repair-tickets/${variables.ticketId}`
-            );
-            if (res?.data) {
-              setSelectedTicket(res.data);
-            }
-          } catch (err) {
-            console.error("Failed to refetch ticket after diagnosis", err);
+    onSuccess: async (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["ticket-timeline"] });
+      toast.success("Diagnosis recorded successfully!");
+      setIsDiagnosisModalOpen(false);
+      diagnosisForm.reset();
+      if (selectedTicket) {
+        try {
+          const res: any = await apiClient.get(
+            `/repair-tickets/${variables.ticketId}`,
+          );
+          if (res?.data) {
+            setSelectedTicket(res.data);
           }
+        } catch (err) {
+          console.error("Failed to refetch ticket after diagnosis", err);
         }
-      },
+      }
+    },
     onError: (err: any) => {
       toast.error(err.message || "Failed to save diagnosis.");
     },
@@ -280,19 +282,19 @@ export default function TicketsPage() {
   const updateStatusMutation = useMutation({
     mutationFn: (data: { ticketId: string; payload: any }) =>
       apiClient.post(`/repair-tickets/${data.ticketId}/status`, data.payload),
-      onSuccess: (res, variables) => {
-        queryClient.invalidateQueries({ queryKey: ["tickets"] });
-        queryClient.invalidateQueries({ queryKey: ["ticket-timeline"] });
-        toast.success("Ticket status updated successfully!");
-        setIsStatusModalOpen(false);
-        statusForm.reset();
-        if (selectedTicket) {
-          setSelectedTicket((prev: any) => ({
-            ...prev,
-            status: variables.payload.status || prev.status,
-          }));
-        }
-      },
+    onSuccess: (res, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["ticket-timeline"] });
+      toast.success("Ticket status updated successfully!");
+      setIsStatusModalOpen(false);
+      statusForm.reset();
+      if (selectedTicket) {
+        setSelectedTicket((prev: any) => ({
+          ...prev,
+          status: variables.payload.status || prev.status,
+        }));
+      }
+    },
     onError: (err: any) => {
       toast.error(err.message || "Status transition denied by state machine.");
     },
@@ -593,43 +595,44 @@ export default function TicketsPage() {
                     <button
                       key={t}
                       id={`status-btn-${t}`}
-                        onClick={() => {
-                          if (
-                            t === "DIAGNOSING" &&
-                            user.role === "TECHNICIAN" &&
-                            selectedTicket.assignedTechnicianId !== user.id
-                          ) {
-                            toast.error(
-                              "You must be assigned to this ticket to begin diagnosis.",
-                            );
-                            return;
-                          }
-                          if (
-                            t === "DIAGNOSING" &&
-                            !selectedTicket.assignedTechnicianId
-                          ) {
-                            toast.error(
-                              "Please assign a technician before starting diagnosis.",
-                            );
-                            return;
-                          }
+                      onClick={() => {
+                        if (
+                          t === "DIAGNOSING" &&
+                          user.role === "TECHNICIAN" &&
+                          selectedTicket.assignedTechnicianId !== user.id
+                        ) {
+                          toast.error(
+                            "You must be assigned to this ticket to begin diagnosis.",
+                          );
+                          return;
+                        }
+                        if (
+                          t === "DIAGNOSING" &&
+                          !selectedTicket.assignedTechnicianId
+                        ) {
+                          toast.error(
+                            "Please assign a technician before starting diagnosis.",
+                          );
+                          return;
+                        }
 
-                          // If diagnosing, open diagnostic modal
-                          if (
-                            t === "WAITING_FOR_APPROVAL" ||
-                            (t === "DIAGNOSING" &&
-                              selectedTicket.status === "PARTS_REQUIRED")
-                          ) {
-                            diagnosisForm.setValue(
-                              "repairFeasibility",
-                              "REPAIRABLE",
-                            );
-                            setIsDiagnosisModalOpen(true);
-                          } else {
-                            statusForm.setValue("status", t);
-                            console.log("Setting isStatusModalOpen to TRUE!"); setIsStatusModalOpen(true);
-                          }
-                        }}
+                        // If diagnosing, open diagnostic modal
+                        if (
+                          t === "WAITING_FOR_APPROVAL" ||
+                          (t === "DIAGNOSING" &&
+                            selectedTicket.status === "PARTS_REQUIRED")
+                        ) {
+                          diagnosisForm.setValue(
+                            "repairFeasibility",
+                            "REPAIRABLE",
+                          );
+                          setIsDiagnosisModalOpen(true);
+                        } else {
+                          statusForm.setValue("status", t);
+                          console.log("Setting isStatusModalOpen to TRUE!");
+                          setIsStatusModalOpen(true);
+                        }
+                      }}
                       className="bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-slate-800 transition-colors"
                     >
                       {t.replace(/_/g, " ")}
@@ -673,193 +676,199 @@ export default function TicketsPage() {
 
               {activeTab === "details" && (
                 <div className="space-y-6">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 pb-1 mb-2">
-                    Device Info
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm font-semibold">
-                    <div>
-                      <span className="text-xs text-slate-400 block font-normal">
-                        Serial Number
-                      </span>
-                      <span>{selectedTicket.device.serialNumber || "N/A"}</span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-slate-400 block font-normal">
-                        Colour / Variant
-                      </span>
-                      <span>
-                        {selectedTicket.device.colour || "N/A"} (
-                        {selectedTicket.device.variant || "N/A"})
-                      </span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-xs text-slate-400 block font-normal">
-                        Cosmetic Damage Intake Notes
-                      </span>
-                      <p className="font-normal text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100 mt-1">
-                        {selectedTicket.existingDamage ||
-                          "No damage noted at check-in."}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 pb-1 mb-2">
-                    Customer Info
-                  </h4>
-                  <div className="text-sm font-semibold">
-                    <div>{selectedTicket.customer.fullName}</div>
-                    <div className="text-xs text-slate-400 font-normal mt-0.5">
-                      Phone: {selectedTicket.customer.phone} | Email:{" "}
-                      {selectedTicket.customer.email || "N/A"}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Diagnostics details */}
-                {selectedTicket.diagnoses &&
-                  selectedTicket.diagnoses.length > 0 && (
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 pb-1 mb-2">
-                        Diagnostic Findings
-                      </h4>
-                      <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 space-y-3 text-sm">
-                        {selectedTicket.diagnoses.map(
-                          (d: any, index: number) => (
-                            <div
-                              key={d.id}
-                              className={
-                                index > 0
-                                  ? "pt-3 border-t border-indigo-100"
-                                  : ""
-                              }
-                            >
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="font-extrabold text-indigo-900">
-                                  {d.faultCategory}
-                                </span>
-                                <span className="text-[10px] text-indigo-600 font-bold bg-indigo-100/50 px-2 py-0.5 rounded">
-                                  {d.repairFeasibility}
-                                </span>
-                              </div>
-                              <p className="text-slate-700 text-xs">
-                                {d.diagnosticFindings}
-                              </p>
-                              <div className="text-[10px] text-slate-400 mt-2 font-medium">
-                                Recorded by {d.technician?.fullName || "Staff"}{" "}
-                                on {new Date(d.createdAt).toLocaleDateString()}
-                              </div>
-                            </div>
-                          ),
-                        )}
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 pb-1 mb-2">
+                      Device Info
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm font-semibold">
+                      <div>
+                        <span className="text-xs text-slate-400 block font-normal">
+                          Serial Number
+                        </span>
+                        <span>
+                          {selectedTicket.device.serialNumber || "N/A"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-slate-400 block font-normal">
+                          Colour / Variant
+                        </span>
+                        <span>
+                          {selectedTicket.device.colour || "N/A"} (
+                          {selectedTicket.device.variant || "N/A"})
+                        </span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-xs text-slate-400 block font-normal">
+                          Cosmetic Damage Intake Notes
+                        </span>
+                        <p className="font-normal text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100 mt-1">
+                          {selectedTicket.existingDamage ||
+                            "No damage noted at check-in."}
+                        </p>
                       </div>
                     </div>
-                  )}
-
-                {/* Attachments Section */}
-                <div>
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 pb-1 mb-2">
-                    Ticket Attachments
-                  </h4>
-
-                  {/* Upload Controls */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 flex items-center justify-between gap-3 flex-wrap">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        Category:
-                      </span>
-                      <select
-                        value={uploadCategory}
-                        onChange={(e) => setUploadCategory(e.target.value)}
-                        className="text-xs font-semibold bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none"
-                      >
-                        <option value="INTAKE_PHOTO">Intake Photo</option>
-                        <option value="DIAGNOSIS_PHOTO">Diagnosis Photo</option>
-                        <option value="REPAIR_PHOTO">Repair Photo</option>
-                        <option value="DOCUMENT">Document</option>
-                        <option value="INVOICE">Invoice</option>
-                        <option value="OTHER">Other</option>
-                      </select>
-                    </div>
-
-                    <label className="cursor-pointer bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-colors">
-                      <Paperclip className="w-3.5 h-3.5" />
-                      {uploadingFile ? "Uploading..." : "Upload File"}
-                      <input
-                        type="file"
-                        onChange={handleFileChange}
-                        disabled={uploadingFile}
-                        className="hidden"
-                      />
-                    </label>
                   </div>
 
-                  {/* Attachment List / Gallery */}
-                  <div className="space-y-2">
-                    {attachments.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic">
-                        No attachments uploaded yet.
-                      </p>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {attachments.map((a: any) => {
-                          const isImage = a.mimeType.startsWith("image/");
-                          const fileUrl = "http://localhost:4000" + a.secureUrl;
-                          return (
-                            <div
-                              key={a.id}
-                              className="border border-slate-200 rounded-xl p-3 bg-white shadow-xs flex items-center justify-between gap-2.5"
-                            >
-                              <div className="min-w-0 flex items-center gap-2">
-                                {isImage ? (
-                                  /* eslint-disable-next-line @next/next/no-img-element */
-                                  <img
-                                    src={fileUrl}
-                                    alt={a.originalName}
-                                    className="w-10 h-10 object-cover rounded-lg border border-slate-100 shrink-0 cursor-pointer"
-                                    onClick={() =>
-                                      window.open(fileUrl, "_blank")
-                                    }
-                                  />
-                                ) : (
-                                  <div className="w-10 h-10 bg-slate-100 text-slate-500 rounded-lg flex items-center justify-center shrink-0">
-                                    <FileText className="w-5 h-5" />
-                                  </div>
-                                )}
-                                <div className="min-w-0">
-                                  <span
-                                    onClick={() =>
-                                      window.open(fileUrl, "_blank")
-                                    }
-                                    className="text-xs font-bold text-slate-800 truncate block hover:underline cursor-pointer"
-                                    title={a.originalName}
-                                  >
-                                    {a.originalName}
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 pb-1 mb-2">
+                      Customer Info
+                    </h4>
+                    <div className="text-sm font-semibold">
+                      <div>{selectedTicket.customer.fullName}</div>
+                      <div className="text-xs text-slate-400 font-normal mt-0.5">
+                        Phone: {selectedTicket.customer.phone} | Email:{" "}
+                        {selectedTicket.customer.email || "N/A"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Diagnostics details */}
+                  {selectedTicket.diagnoses &&
+                    selectedTicket.diagnoses.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 pb-1 mb-2">
+                          Diagnostic Findings
+                        </h4>
+                        <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 space-y-3 text-sm">
+                          {selectedTicket.diagnoses.map(
+                            (d: any, index: number) => (
+                              <div
+                                key={d.id}
+                                className={
+                                  index > 0
+                                    ? "pt-3 border-t border-indigo-100"
+                                    : ""
+                                }
+                              >
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="font-extrabold text-indigo-900">
+                                    {d.faultCategory}
                                   </span>
-                                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mt-0.5">
-                                    {a.category.replace(/_/g, " ")}
+                                  <span className="text-[10px] text-indigo-600 font-bold bg-indigo-100/50 px-2 py-0.5 rounded">
+                                    {d.repairFeasibility}
                                   </span>
                                 </div>
+                                <p className="text-slate-700 text-xs">
+                                  {d.diagnosticFindings}
+                                </p>
+                                <div className="text-[10px] text-slate-400 mt-2 font-medium">
+                                  Recorded by{" "}
+                                  {d.technician?.fullName || "Staff"} on{" "}
+                                  {new Date(d.createdAt).toLocaleDateString()}
+                                </div>
                               </div>
-
-                              <button
-                                onClick={() =>
-                                  deleteAttachmentMutation.mutate(a.id)
-                                }
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg shrink-0 transition-colors"
-                                title="Delete file"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          );
-                        })}
+                            ),
+                          )}
+                        </div>
                       </div>
                     )}
+
+                  {/* Attachments Section */}
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 pb-1 mb-2">
+                      Ticket Attachments
+                    </h4>
+
+                    {/* Upload Controls */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          Category:
+                        </span>
+                        <select
+                          value={uploadCategory}
+                          onChange={(e) => setUploadCategory(e.target.value)}
+                          className="text-xs font-semibold bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none"
+                        >
+                          <option value="INTAKE_PHOTO">Intake Photo</option>
+                          <option value="DIAGNOSIS_PHOTO">
+                            Diagnosis Photo
+                          </option>
+                          <option value="REPAIR_PHOTO">Repair Photo</option>
+                          <option value="DOCUMENT">Document</option>
+                          <option value="INVOICE">Invoice</option>
+                          <option value="OTHER">Other</option>
+                        </select>
+                      </div>
+
+                      <label className="cursor-pointer bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-colors">
+                        <Paperclip className="w-3.5 h-3.5" />
+                        {uploadingFile ? "Uploading..." : "Upload File"}
+                        <input
+                          type="file"
+                          onChange={handleFileChange}
+                          disabled={uploadingFile}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    {/* Attachment List / Gallery */}
+                    <div className="space-y-2">
+                      {attachments.length === 0 ? (
+                        <p className="text-xs text-slate-400 italic">
+                          No attachments uploaded yet.
+                        </p>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {attachments.map((a: any) => {
+                            const isImage = a.mimeType.startsWith("image/");
+                            const fileUrl =
+                              "http://localhost:4000" + a.secureUrl;
+                            return (
+                              <div
+                                key={a.id}
+                                className="border border-slate-200 rounded-xl p-3 bg-white shadow-xs flex items-center justify-between gap-2.5"
+                              >
+                                <div className="min-w-0 flex items-center gap-2">
+                                  {isImage ? (
+                                    /* eslint-disable-next-line @next/next/no-img-element */
+                                    <img
+                                      src={fileUrl}
+                                      alt={a.originalName}
+                                      className="w-10 h-10 object-cover rounded-lg border border-slate-100 shrink-0 cursor-pointer"
+                                      onClick={() =>
+                                        window.open(fileUrl, "_blank")
+                                      }
+                                    />
+                                  ) : (
+                                    <div className="w-10 h-10 bg-slate-100 text-slate-500 rounded-lg flex items-center justify-center shrink-0">
+                                      <FileText className="w-5 h-5" />
+                                    </div>
+                                  )}
+                                  <div className="min-w-0">
+                                    <span
+                                      onClick={() =>
+                                        window.open(fileUrl, "_blank")
+                                      }
+                                      className="text-xs font-bold text-slate-800 truncate block hover:underline cursor-pointer"
+                                      title={a.originalName}
+                                    >
+                                      {a.originalName}
+                                    </span>
+                                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mt-0.5">
+                                      {a.category.replace(/_/g, " ")}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <button
+                                  onClick={() =>
+                                    deleteAttachmentMutation.mutate(a.id)
+                                  }
+                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg shrink-0 transition-colors"
+                                  title="Delete file"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
                 </div>
               )}
 
@@ -882,25 +891,32 @@ export default function TicketsPage() {
                             </span>
                             {item.publicNote && (
                               <p className="text-xs text-slate-600 mt-1">
-                                <span className="font-semibold text-[10px] text-slate-400 uppercase tracking-wider block">Public Note:</span>
+                                <span className="font-semibold text-[10px] text-slate-400 uppercase tracking-wider block">
+                                  Public Note:
+                                </span>
                                 {item.publicNote}
                               </p>
                             )}
                             {item.internalNote && (
                               <p className="text-xs text-slate-600 mt-1">
-                                <span className="font-semibold text-[10px] text-slate-400 uppercase tracking-wider block">Internal Note:</span>
+                                <span className="font-semibold text-[10px] text-slate-400 uppercase tracking-wider block">
+                                  Internal Note:
+                                </span>
                                 {item.internalNote}
                               </p>
                             )}
                             <span className="text-[9px] text-slate-400 mt-1.5 block">
-                              By {item.changedBy?.fullName} ({item.changedBy?.role})
+                              By {item.changedBy?.fullName} (
+                              {item.changedBy?.role})
                             </span>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-400 italic">No history records found.</p>
+                    <p className="text-xs text-slate-400 italic">
+                      No history records found.
+                    </p>
                   )}
                 </div>
               )}

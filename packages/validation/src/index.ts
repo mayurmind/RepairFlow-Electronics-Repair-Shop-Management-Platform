@@ -117,7 +117,9 @@ const deviceCategories = [
 ] as const;
 
 export const createDeviceSchema = z.object({
-  category: z.enum(deviceCategories, { required_error: "Category is required" }),
+  category: z.enum(deviceCategories, {
+    required_error: "Category is required",
+  }),
   brand: z.string().min(1, "Brand is required"),
   model: z.string().min(1, "Model is required"),
   serialNumber: z.string().optional().nullable(),

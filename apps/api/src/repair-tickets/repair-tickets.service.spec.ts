@@ -353,13 +353,15 @@ describe("RepairTicketsService", () => {
       });
 
       // Verify status history
-      expect(mockPrismaService.ticketStatusHistory.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          repairTicketId: "ticket-1",
-          previousStatus: "DIAGNOSING",
-          newStatus: "WAITING_FOR_APPROVAL",
-        }),
-      });
+      expect(mockPrismaService.ticketStatusHistory.create).toHaveBeenCalledWith(
+        {
+          data: expect.objectContaining({
+            repairTicketId: "ticket-1",
+            previousStatus: "DIAGNOSING",
+            newStatus: "WAITING_FOR_APPROVAL",
+          }),
+        },
+      );
 
       // Verify audit logs
       expect(mockAuditLogsService.createLog).toHaveBeenCalledWith(
@@ -420,13 +422,15 @@ describe("RepairTicketsService", () => {
       });
 
       // Verify status history
-      expect(mockPrismaService.ticketStatusHistory.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          repairTicketId: "ticket-1",
-          previousStatus: "DIAGNOSING",
-          newStatus: "UNREPAIRABLE",
-        }),
-      });
+      expect(mockPrismaService.ticketStatusHistory.create).toHaveBeenCalledWith(
+        {
+          data: expect.objectContaining({
+            repairTicketId: "ticket-1",
+            previousStatus: "DIAGNOSING",
+            newStatus: "UNREPAIRABLE",
+          }),
+        },
+      );
 
       // Verify audit logs
       expect(mockAuditLogsService.createLog).toHaveBeenCalledWith(
