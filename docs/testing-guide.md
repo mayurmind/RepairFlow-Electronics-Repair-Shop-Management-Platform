@@ -9,7 +9,7 @@ The API is tested using Jest. We use it for both Unit Tests and Integration Test
 - **Run unit tests**: `npm run test`
 - **Run e2e tests**: `npm run test:e2e` (Uses Supertest to test API routes, controllers, and validation pipes)
 
-Test files are located alongside their respective services (`*.spec.ts`), while E2E tests are located in `apps/api/test/`.
+Test files are located alongside their respective services (`*.spec.ts`), while E2E tests are located in `apps/api/test/`. Note that while some E2E tests use mocked Prisma, `branch-isolation.e2e-spec.ts` connects to a real database to fully test SQL isolation and composite foreign key integrity.
 
 ## Frontend Tests (Next.js)
 

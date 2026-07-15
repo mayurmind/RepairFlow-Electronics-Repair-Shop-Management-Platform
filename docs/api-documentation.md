@@ -92,7 +92,7 @@ This document outlines the API design, response formats, authentication headers,
 ### 4. Customers & Devices
 
 - `GET /customers`: List and search customer profiles.
-- `POST /customers`: Register new customer.
+- `POST /customers`: Register new customer. Requires `branchId`.
 - `GET /customers/:id`: Get customer profile.
 - `PATCH /customers/:id`: Update customer details.
 - `GET /customers/:id/devices`: Get customer registered hardware.

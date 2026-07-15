@@ -29,10 +29,7 @@ And then append a constraint to the database query:
 where.branchId = { in: assignedBranchIds };
 ```
 
-For related entities like Customers and Devices that are shared across branches, the query checks whether the customer has tickets in the user's branch.
-
-> **Note on Phase 2A Limitations:**
-> Currently, customers (and their associated devices) that have _zero_ repair tickets are globally visible to all branches. This occurs because isolation is predicated on the branch of the associated repair tickets. A strict branch-ownership model for newly created customers and devices will be defined and implemented in Phase 2B.
+For related entities like Customers and Devices, ownership is strictly enforced via a `branchId` column directly on those models. To prevent orphaned or cross-branch data corruption, the `Device` model employs a composite foreign key to the `Customer` model: `@relation(fields: [customerId, branchId], references: [id, branchId])`. This guarantees that a Device and its Customer always belong to the same branch at the database level.
 
 ## Role Exceptions
 
