@@ -16,7 +16,7 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
 
   const randSuffix = Math.random().toString(36).substring(7);
   const customerName = `E2E Customer ${randSuffix}`;
-  const customerPhone = `1555${Date.now().toString().slice(-6)}`;
+  const customerPhone = `+1555${Date.now().toString().slice(-6)}`;
 
   await page.fill('input[placeholder="e.g. John Doe"]', customerName);
   await page.fill('input[placeholder="e.g. +15551122"]', customerPhone);

@@ -13,9 +13,9 @@ describe("DevicesService", () => {
   const mockActor: AuthenticatedUser = {
     id: "actor-1",
     email: "staff@repairflow.com",
-    role: "FRONT_DESK",
-    status: "ACTIVE",
-    branchIds: ["branch-1"],
+    fullName: "Staff Member",
+    role: "FRONT_DESK" as any,
+    branches: [{ id: "branch-1" }] as any,
   };
 
   const mockPrismaService: any = {

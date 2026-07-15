@@ -9,10 +9,10 @@ describe("BranchAccessGuard", () => {
 
   beforeEach(() => {
     mockPrismaService = {
-      repairTicket: { findUnique: jest.fn() },
-      estimate: { findUnique: jest.fn() },
-      invoice: { findUnique: jest.fn() },
-      attachment: { findUnique: jest.fn() },
+      repairTicket: { findFirst: jest.fn() },
+      estimate: { findFirst: jest.fn() },
+      invoice: { findFirst: jest.fn() },
+      attachment: { findFirst: jest.fn() },
       user: { findUnique: jest.fn() },
     };
 
@@ -20,6 +20,7 @@ describe("BranchAccessGuard", () => {
 
     mockRequest = {
       url: "",
+      get path() { return this.url; },
       method: "GET",
       user: {
         role: "TECHNICIAN",
@@ -60,9 +61,7 @@ describe("BranchAccessGuard", () => {
   it("should fetch resource and block if it belongs to an unassigned branch", async () => {
     mockRequest.url = "/api/v1/tickets/123";
     mockRequest.params.id = "123";
-    mockPrismaService.repairTicket.findUnique.mockResolvedValue({
-      branchId: "unassigned-branch",
-    });
+    mockPrismaService.repairTicket.findFirst.mockResolvedValue(null);
 
     await expect(guard.canActivate(mockContext)).rejects.toThrow(
       ForbiddenException,
@@ -72,9 +71,7 @@ describe("BranchAccessGuard", () => {
   it("should fetch resource and allow if it belongs to an assigned branch", async () => {
     mockRequest.url = "/api/v1/tickets/123";
     mockRequest.params.id = "123";
-    mockPrismaService.repairTicket.findUnique.mockResolvedValue({
-      branchId: "branch-1",
-    });
+    mockPrismaService.repairTicket.findFirst.mockResolvedValue({ id: "123" });
 
     const result = await guard.canActivate(mockContext);
     expect(result).toBe(true);

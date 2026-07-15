@@ -41,7 +41,7 @@ export default function DevicesPage() {
       const params: any = {};
       if (searchTerm) params.search = searchTerm;
       const res: any = await apiClient.get("/devices", { params });
-      return res.data;
+      return res;
     },
     enabled: !isTechnician,
   });
@@ -58,7 +58,7 @@ export default function DevicesPage() {
       const res: any = await apiClient.get(
         `/devices/${selectedDevice.id}/repair-history`,
       );
-      return res.data;
+      return res;
     },
     enabled: isHistoryOpen && !!selectedDevice?.id,
   });

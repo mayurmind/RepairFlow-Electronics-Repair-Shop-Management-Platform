@@ -46,6 +46,7 @@ export default function TicketsPage() {
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("details"); // details, timeline
 
   // Attachments State & Queries
   const [uploadCategory, setUploadCategory] = useState("INTAKE_PHOTO");
@@ -138,6 +139,15 @@ export default function TicketsPage() {
     enabled: !!activeBranchId,
   });
 
+  const { data: timelineData } = useQuery<any>({
+    queryKey: ["ticket-timeline", selectedTicket?.id],
+    queryFn: async () => {
+      const res: any = await apiClient.get(`/repair-tickets/${selectedTicket.id}/timeline`);
+      return res.data || [];
+    },
+    enabled: !!selectedTicket?.id && isDetailDrawerOpen,
+  });
+
   const { data: customersData } = useQuery<any>({
     queryKey: ["customers-list"],
     queryFn: () => apiClient.get("/customers"),
@@ -147,7 +157,7 @@ export default function TicketsPage() {
   const { data: branchTechsData } = useQuery<any>({
     queryKey: ["branch-techs", activeBranchId],
     queryFn: () => apiClient.get(`/users`, { params: { role: "TECHNICIAN" } }),
-    enabled: isAssignModalOpen || isCreateModalOpen,
+    enabled: isAssignModalOpen,
   });
 
   // Selected customer for creating device in creation flow
@@ -444,6 +454,7 @@ export default function TicketsPage() {
               onClick={() => {
                 setSelectedTicket(ticket);
                 setIsDetailDrawerOpen(true);
+                setActiveTab("details");
               }}
               className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer flex flex-col justify-between hover-slide relative overflow-hidden"
             >
@@ -561,6 +572,7 @@ export default function TicketsPage() {
                   {getAllowedTransitions(selectedTicket.status).map((t) => (
                     <button
                       key={t}
+                      id={`status-btn-${t}`}
                       onClick={() => {
                         if (
                           t === "DIAGNOSING" &&
@@ -609,14 +621,38 @@ export default function TicketsPage() {
                         onClick={() => setIsAssignModalOpen(true)}
                         className="flex items-center gap-1 bg-blue-600 text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-blue-500 transition-colors"
                       >
-                        <UserPlus className="w-3.5 h-3.5" /> Assign Tech
+                        <UserPlus className="w-3.5 h-3.5" /> Assign Staff
                       </button>
                     )}
                 </div>
               </div>
 
-              {/* Ticket details */}
-              <div className="space-y-6">
+              {/* Tab Bar */}
+              <div className="flex border-b border-slate-100 mb-6">
+                <button
+                  onClick={() => setActiveTab("details")}
+                  className={`flex-1 pb-3 text-sm font-bold text-center border-b-2 transition-all ${
+                    activeTab === "details"
+                      ? "border-slate-900 text-slate-900"
+                      : "border-transparent text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  Details
+                </button>
+                <button
+                  onClick={() => setActiveTab("timeline")}
+                  className={`flex-1 pb-3 text-sm font-bold text-center border-b-2 transition-all ${
+                    activeTab === "timeline"
+                      ? "border-slate-950 text-slate-950 font-extrabold"
+                      : "border-transparent text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  Timeline
+                </button>
+              </div>
+
+              {activeTab === "details" && (
+                <div className="space-y-6">
                 <div>
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 pb-1 mb-2">
                     Device Info
@@ -804,7 +840,50 @@ export default function TicketsPage() {
                     )}
                   </div>
                 </div>
-              </div>
+                </div>
+              )}
+
+              {activeTab === "timeline" && (
+                <div className="space-y-6">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">
+                    Status History Log
+                  </h4>
+                  {timelineData && timelineData.length > 0 ? (
+                    <div className="relative border-l border-slate-200 ml-3 space-y-6">
+                      {timelineData.map((item: any) => (
+                        <div key={item.id} className="relative pl-6">
+                          <div className="absolute -left-[5.5px] top-1.5 w-2.5 h-2.5 rounded-full bg-slate-300 border-2 border-white ring-4 ring-slate-50" />
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 block">
+                              {new Date(item.createdAt).toLocaleString()}
+                            </span>
+                            <span className="text-xs font-bold text-slate-950 mt-1 block">
+                              {item.newStatus.replace(/_/g, " ")}
+                            </span>
+                            {item.publicNote && (
+                              <p className="text-xs text-slate-600 mt-1">
+                                <span className="font-semibold text-[10px] text-slate-400 uppercase tracking-wider block">Public Note:</span>
+                                {item.publicNote}
+                              </p>
+                            )}
+                            {item.internalNote && (
+                              <p className="text-xs text-slate-600 mt-1">
+                                <span className="font-semibold text-[10px] text-slate-400 uppercase tracking-wider block">Internal Note:</span>
+                                {item.internalNote}
+                              </p>
+                            )}
+                            <span className="text-[9px] text-slate-400 mt-1.5 block">
+                              By {item.changedBy?.fullName} ({item.changedBy?.role})
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">No history records found.</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Create Estimate quick-access */}
@@ -847,8 +926,9 @@ export default function TicketsPage() {
                   Select Customer
                 </label>
                 <select
-                  {...createForm.register("customerId")}
-                  onChange={(e) => setSelectedCustId(e.target.value)}
+                  {...createForm.register("customerId", {
+                    onChange: (e) => setSelectedCustId(e.target.value),
+                  })}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-slate-400 focus:bg-white text-sm font-semibold"
                 >
                   <option value="">-- Choose Customer --</option>
@@ -877,7 +957,7 @@ export default function TicketsPage() {
                   <option value="">-- Choose Device --</option>
                   {customerDevicesData?.data?.map((d: any) => (
                     <option key={d.id} value={d.id}>
-                      {d.brand} {d.model} ({d.serialNumber || "No Serial"})
+                      {d.brand} {d.model} (SN: {d.serialNumber || "No Serial"})
                     </option>
                   ))}
                 </select>
@@ -1012,6 +1092,7 @@ export default function TicketsPage() {
                   Technicians List
                 </label>
                 <select
+                  id="technician-select"
                   value={selectedTechId}
                   onChange={(e) => setSelectedTechId(e.target.value)}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-slate-400 text-sm font-semibold"
@@ -1032,6 +1113,7 @@ export default function TicketsPage() {
                   Cancel
                 </button>
                 <button
+                  id="confirm-assign-btn"
                   onClick={() =>
                     assignTechMutation.mutate({
                       ticketId: selectedTicket.id,

@@ -35,9 +35,9 @@ describe("RepairTicketsService", () => {
   const mockActor: AuthenticatedUser = {
     id: mockActorId,
     email: "frontdesk@repairflow.com",
-    role: "FRONT_DESK",
-    status: "ACTIVE",
-    branchIds: [mockBranchId],
+    fullName: "Front Desk Staff",
+    role: "FRONT_DESK" as any,
+    branches: [{ id: mockBranchId }] as any,
   };
 
   const mockPrismaService: any = {
@@ -199,9 +199,8 @@ describe("RepairTicketsService", () => {
     const mockTechId = "tech-1";
     const mockTechUser = {
       id: mockTechId,
-      role: "TECHNICIAN",
-      status: "ACTIVE",
-      userBranches: [{ branchId: mockBranchId }],
+      role: "TECHNICIAN" as any,
+      branches: [{ id: mockBranchId }] as any,
     };
 
     it("should assign technician successfully if technician belongs to ticket branch", async () => {
@@ -238,7 +237,7 @@ describe("RepairTicketsService", () => {
       mockPrismaService.repairTicket.findUnique.mockResolvedValue(ticket);
       mockPrismaService.user.findFirst.mockResolvedValue({
         ...mockTechUser,
-        userBranches: [{ branchId: "different-branch" }],
+        branches: [{ id: "different-branch" }] as any,
       });
 
       await expect(
@@ -296,7 +295,7 @@ describe("RepairTicketsService", () => {
       await expect(
         service.deliverTicket(
           "ticket-1",
-          { deliveryNotes: "Delivered ok" },
+          { internalNotes: "Delivered ok", publicNotes: "Delivered ok" } as any,
           mockActor,
         ),
       ).rejects.toThrow(BadRequestException);
