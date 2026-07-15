@@ -13,6 +13,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/role.guard";
 import { Roles } from "../common/decorators/roles.decorator";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { AuthenticatedUser } from "../auth/types/authenticated-user.type";
 import { PrismaService } from "../prisma/prisma.service";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 
@@ -31,7 +32,7 @@ export class ReportsController {
     summary: "Get role-tailored dashboard metrics and activity lists",
   })
   async getDashboard(
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
     @Query("branchId") branchId?: string,
   ) {
     const data = await this.reportsService.getDashboard(actor, branchId);
@@ -42,7 +43,7 @@ export class ReportsController {
   @Roles("SYSTEM_ADMIN", "OWNER", "BRANCH_MANAGER")
   @ApiOperation({ summary: "Get revenue report" })
   async getRevenueReport(
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
     @Query("startDate") startDate: string,
     @Query("endDate") endDate: string,
     @Query("branchId") branchId?: string,
@@ -65,7 +66,7 @@ export class ReportsController {
   @Roles("SYSTEM_ADMIN", "OWNER")
   @ApiOperation({ summary: "Get comparative branch performance reports" })
   async getBranchPerformance(
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
     @Query("startDate") startDate: string,
     @Query("endDate") endDate: string,
   ) {
@@ -83,7 +84,7 @@ export class ReportsController {
   @Get("technicians")
   @Roles("SYSTEM_ADMIN", "OWNER", "BRANCH_MANAGER")
   @ApiOperation({ summary: "Get technicians performance report" })
-  async getTechniciansReport(@CurrentUser() actor: any) {
+  async getTechniciansReport(@CurrentUser() actor: AuthenticatedUser) {
     const technicians = await this.prisma.user.findMany({
       where: { role: "TECHNICIAN" },
       select: {
@@ -119,14 +120,14 @@ export class ReportsController {
   @Get("delayed-tickets")
   @Roles("SYSTEM_ADMIN", "OWNER", "BRANCH_MANAGER")
   @ApiOperation({ summary: "Get delayed tickets" })
-  async getDelayedTickets(@CurrentUser() actor: any) {
+  async getDelayedTickets(@CurrentUser() actor: AuthenticatedUser) {
     const where: any = {
       expectedCompletionAt: { lt: new Date() },
       status: { notIn: ["DELIVERED", "CANCELLED", "READY_FOR_COLLECTION"] },
     };
 
     if (actor.role === "BRANCH_MANAGER") {
-      const branchIds = actor.branches?.map((b: any) => b.id) || [];
+      const branchIds = actor.branches?.map(b => b.id) || [];
       where.branchId = { in: branchIds };
     }
 
@@ -186,10 +187,13 @@ export class ReportsController {
   @Get("export")
   @Roles("SYSTEM_ADMIN", "OWNER", "BRANCH_MANAGER")
   @ApiOperation({ summary: "Export ticket records as CSV" })
-  async exportCsv(@CurrentUser() actor: any, @Res() res: Response) {
+  async exportCsv(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Res() res: Response,
+  ) {
     const where: any = {};
     if (actor.role === "BRANCH_MANAGER") {
-      const branchIds = actor.branches?.map((b: any) => b.id) || [];
+      const branchIds = actor.branches?.map(b => b.id) || [];
       where.branchId = { in: branchIds };
     }
 

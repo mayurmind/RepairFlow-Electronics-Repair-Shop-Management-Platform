@@ -2,6 +2,7 @@ import { Injectable, ForbiddenException } from "@nestjs/common";
 import * as fs from "fs";
 import * as path from "path";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
+import { AuthenticatedUser } from "../auth/types/authenticated-user.type";
 
 export interface SystemSettings {
   companyName: string;
@@ -59,7 +60,7 @@ export class SettingsService {
 
   async updateSettings(
     data: Partial<SystemSettings>,
-    actor: any,
+    actor: AuthenticatedUser,
   ): Promise<SystemSettings> {
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
       throw new ForbiddenException(

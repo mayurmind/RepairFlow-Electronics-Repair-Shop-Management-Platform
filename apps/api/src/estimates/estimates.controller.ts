@@ -13,6 +13,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/role.guard";
 import { Roles } from "../common/decorators/roles.decorator";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { AuthenticatedUser } from "../auth/types/authenticated-user.type";
 import { EstimateStatus } from "@repairflow/shared-types";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 
@@ -31,7 +32,7 @@ export class EstimatesController {
   async create(
     @Param("ticketId") ticketId: string,
     @Body() body: any,
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
   ) {
     const estimate = await this.estimatesService.create(ticketId, body, actor);
     return { success: true, data: estimate };
@@ -40,7 +41,7 @@ export class EstimatesController {
   @Get("estimates")
   @ApiOperation({ summary: "List and filter estimates" })
   async findAll(
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
     @Query("ticketId") ticketId?: string,
     @Query("status") status?: EstimateStatus,
     @Query("page") page?: number,
@@ -61,7 +62,10 @@ export class EstimatesController {
 
   @Get("estimates/:id")
   @ApiOperation({ summary: "Get estimate details by ID" })
-  async findOne(@Param("id") id: string, @CurrentUser() actor: any) {
+  async findOne(
+    @Param("id") id: string,
+    @CurrentUser() actor: AuthenticatedUser,
+  ) {
     const estimate = await this.estimatesService.findOne(id, actor);
     return { success: true, data: estimate };
   }
@@ -71,7 +75,7 @@ export class EstimatesController {
   @ApiOperation({
     summary: "Send estimate to customer (releases review token)",
   })
-  async send(@Param("id") id: string, @CurrentUser() actor: any) {
+  async send(@Param("id") id: string, @CurrentUser() actor: AuthenticatedUser) {
     const result = await this.estimatesService.send(id, actor);
     return { success: true, ...result };
   }
@@ -79,7 +83,10 @@ export class EstimatesController {
   @Post("estimates/:id/cancel")
   @Roles("SYSTEM_ADMIN", "OWNER", "BRANCH_MANAGER")
   @ApiOperation({ summary: "Cancel/void estimate" })
-  async cancel(@Param("id") id: string, @CurrentUser() actor: any) {
+  async cancel(
+    @Param("id") id: string,
+    @CurrentUser() actor: AuthenticatedUser,
+  ) {
     const estimate = await this.estimatesService.cancel(id, actor);
     return { success: true, data: estimate };
   }

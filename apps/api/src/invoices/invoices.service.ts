@@ -11,6 +11,7 @@ import {
   recordPaymentSchema,
 } from "@repairflow/validation";
 import { InvoiceStatus, PaymentMethod } from "@repairflow/shared-types";
+import { AuthenticatedUser } from "../auth/types/authenticated-user.type";
 import PDFDocument from "pdfkit";
 import { createHash } from "crypto";
 import type { Prisma, EstimateItem } from "@prisma/client";
@@ -34,7 +35,11 @@ export class InvoicesService {
     return `INV-${branchCode}-2026-${seqStr}`;
   }
 
-  async createFromTicket(ticketId: string, data: any, actor: any) {
+  async createFromTicket(
+    ticketId: string,
+    data: any,
+    actor: AuthenticatedUser,
+  ) {
     const ticket = await this.prisma.repairTicket.findUnique({
       where: { id: ticketId },
       include: {
@@ -156,7 +161,7 @@ export class InvoicesService {
   }
 
   async findAll(
-    actor: any,
+    actor: AuthenticatedUser,
     query: { status?: InvoiceStatus; page?: number; limit?: number },
   ) {
     const page = Number(query.page) || 1;
@@ -167,7 +172,7 @@ export class InvoicesService {
 
     // Branch isolation
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      const assignedBranchIds = actor.branches?.map((b: any) => b.id) || [];
+      const assignedBranchIds = actor.branches?.map(b => b.id) || [];
       where.repairTicket = {
         branchId: { in: assignedBranchIds },
       };
@@ -204,7 +209,7 @@ export class InvoicesService {
     };
   }
 
-  async findOne(id: string, actor: any) {
+  async findOne(id: string, actor: AuthenticatedUser) {
     const invoice = await this.prisma.invoice.findUnique({
       where: { id },
       include: {
@@ -228,7 +233,7 @@ export class InvoicesService {
 
     // Branch isolation check
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      const assignedBranchIds = actor.branches?.map((b: any) => b.id) || [];
+      const assignedBranchIds = actor.branches?.map(b => b.id) || [];
       if (!assignedBranchIds.includes(invoice.repairTicket.branchId)) {
         throw new ForbiddenException("Branch access isolation violation.");
       }
@@ -237,7 +242,11 @@ export class InvoicesService {
     return invoice;
   }
 
-  async recordPayment(invoiceId: string, paymentData: any, actor: any) {
+  async recordPayment(
+    invoiceId: string,
+    paymentData: any,
+    actor: AuthenticatedUser,
+  ) {
     const invoice = await this.findOne(invoiceId, actor);
     if (invoice.status === "PAID") {
       throw new BadRequestException("Invoice is already fully paid.");
@@ -314,7 +323,7 @@ export class InvoicesService {
     });
   }
 
-  async voidInvoice(id: string, actor: any) {
+  async voidInvoice(id: string, actor: AuthenticatedUser) {
     const invoice = await this.findOne(id, actor);
     if (invoice.status === "PAID" || invoice.amountPaid > 0) {
       throw new BadRequestException(
@@ -341,7 +350,7 @@ export class InvoicesService {
     });
   }
 
-  async getPayments(invoiceId: string, actor: any) {
+  async getPayments(invoiceId: string, actor: AuthenticatedUser) {
     await this.findOne(invoiceId, actor);
     return this.prisma.paymentRecord.findMany({
       where: { invoiceId },

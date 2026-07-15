@@ -45,7 +45,7 @@ describe("AttachmentsService", () => {
     mockPrismaService.repairTicket.findUnique.mockResolvedValue(null);
     const category: AttachmentCategory = "INTAKE_PHOTO";
     await expect(
-      service.uploadAttachment("t1", {}, category, "u1"),
+      service.uploadAttachment("t1", {}, category, { id: "u1" } as any),
     ).rejects.toThrow(NotFoundException);
   });
 });

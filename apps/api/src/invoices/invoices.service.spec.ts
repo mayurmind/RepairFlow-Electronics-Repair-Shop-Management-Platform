@@ -76,7 +76,7 @@ describe("InvoicesService - Money Calculation", () => {
         discountAmount: 1000, // $10.00 discount
         customerNotes: "Thanks",
       },
-      actor,
+      actor as any,
     );
 
     // subtotal = 10000

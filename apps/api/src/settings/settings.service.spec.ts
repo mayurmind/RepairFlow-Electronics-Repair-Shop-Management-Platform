@@ -40,17 +40,17 @@ describe("SettingsService", () => {
   });
 
   it("should update settings if OWNER", async () => {
-    const result = await service.updateSettings(
-      { companyName: "New" },
-      { role: "OWNER", id: "1" },
-    );
+    const result = await service.updateSettings({ companyName: "New" }, {
+      role: "OWNER",
+      id: "1",
+    } as any);
     expect(result.companyName).toBe("New");
     expect(mockAuditLogsService.createLog).toHaveBeenCalled();
   });
 
   it("should throw forbidden if not owner/admin", async () => {
     await expect(
-      service.updateSettings({}, { role: "TECHNICIAN" }),
+      service.updateSettings({}, { role: "TECHNICIAN" } as any),
     ).rejects.toThrow(ForbiddenException);
   });
 });

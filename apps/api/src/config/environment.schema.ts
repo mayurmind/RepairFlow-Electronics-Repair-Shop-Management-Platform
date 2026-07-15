@@ -16,10 +16,14 @@ export const environmentSchema = z.object({
       "JWT_ACCESS_SECRET must be at least 32 characters long. Placeholder values are not allowed in production.",
     )
     .refine(
-      (val) =>
-        !val.includes("dev") &&
-        !val.includes("example") &&
-        !val.includes("change-me"),
+      (val) => {
+        if (process.env.NODE_ENV !== "production") return true;
+        return (
+          !val.includes("dev") &&
+          !val.includes("example") &&
+          !val.includes("change-me")
+        );
+      },
       {
         message:
           'Production secrets must not contain "dev", "example", or "change-me"',

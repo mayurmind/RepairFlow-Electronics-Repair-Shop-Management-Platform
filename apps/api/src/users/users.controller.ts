@@ -16,6 +16,7 @@ import { RolesGuard } from "../common/guards/role.guard";
 import { BranchAccessGuard } from "../common/guards/branch.guard";
 import { Roles } from "../common/decorators/roles.decorator";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { AuthenticatedUser } from "../auth/types/authenticated-user.type";
 import { UserRole, UserStatus } from "@repairflow/shared-types";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -37,7 +38,10 @@ export class UsersController {
   @ApiOperation({
     summary: "Create a new staff user account",
   })
-  async create(@Body() body: CreateUserDto, @CurrentUser() actor: any) {
+  async create(
+    @Body() body: CreateUserDto,
+    @CurrentUser() actor: AuthenticatedUser,
+  ) {
     const user = await this.usersService.create(body, actor);
     return { success: true, data: user };
   }
@@ -47,7 +51,7 @@ export class UsersController {
   @ApiOperation({ summary: "List all staff users" })
   async findAll(
     @Query() query: FindAllUsersQueryDto,
-    @CurrentUser() actor?: any,
+    @CurrentUser() actor: AuthenticatedUser,
   ) {
     const result = await this.usersService.findAll(query, actor);
     return {
@@ -62,7 +66,7 @@ export class UsersController {
   @ApiOperation({ summary: "Get user details by ID" })
   async findOne(
     @Param("id", ParseUUIDPipe) id: string,
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
   ) {
     const user = await this.usersService.findOne(id, actor);
     return { success: true, data: user };
@@ -74,7 +78,7 @@ export class UsersController {
   async update(
     @Param("id", ParseUUIDPipe) id: string,
     @Body() body: UpdateUserDto,
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
   ) {
     const user = await this.usersService.update(id, body, actor);
     return { success: true, data: user };
@@ -86,7 +90,7 @@ export class UsersController {
   async updateStatus(
     @Param("id", ParseUUIDPipe) id: string,
     @Body() body: UpdateUserStatusDto,
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
   ) {
     const user = await this.usersService.updateStatus(id, body.status, actor);
     return { success: true, data: user };
@@ -98,7 +102,7 @@ export class UsersController {
   async updateRole(
     @Param("id", ParseUUIDPipe) id: string,
     @Body() body: UpdateUserRoleDto,
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
   ) {
     const user = await this.usersService.updateRole(id, body.role, actor);
     return { success: true, data: user };
@@ -110,7 +114,7 @@ export class UsersController {
   async assignBranch(
     @Param("id", ParseUUIDPipe) id: string,
     @Body() body: AssignBranchDto,
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
   ) {
     const userBranch = await this.usersService.assignBranch(
       id,
@@ -126,7 +130,7 @@ export class UsersController {
   async removeBranch(
     @Param("id", ParseUUIDPipe) id: string,
     @Param("branchId", ParseUUIDPipe) branchId: string,
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
   ) {
     const result = await this.usersService.removeBranch(id, branchId, actor);
     return { success: true, data: result };

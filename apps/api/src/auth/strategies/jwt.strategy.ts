@@ -2,10 +2,15 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { PrismaService } from "../../prisma/prisma.service";
+import type {
+  AuthenticatedBranch,
+  AuthenticatedUser,
+  JwtAccessTokenPayload,
+} from "../types/authenticated-user.type";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private prisma: PrismaService) {
+  constructor(private readonly prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -13,12 +18,26 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtAccessTokenPayload): Promise<AuthenticatedUser> {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        status: true,
         userBranches: {
-          include: { branch: true },
+          select: {
+            branch: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+                isActive: true,
+              },
+            },
+          },
         },
       },
     });
@@ -36,7 +55,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.email,
       fullName: user.fullName,
       role: user.role,
-      branches: user.userBranches.map((ub) => ub.branch),
+      branches: user.userBranches.map(({ branch }) => ({
+        id: branch.id,
+        name: branch.name,
+        code: branch.code,
+        isActive: branch.isActive,
+      })),
     };
   }
 }
