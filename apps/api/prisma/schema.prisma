@@ -114,6 +114,8 @@ model Branch {
   userBranches UserBranch[]
   tickets      RepairTicket[]
   auditLogs    AuditLog[]
+  customers    Customer[]
+  devices      Device[]
 }
 
 model User {
@@ -182,6 +184,7 @@ model PasswordResetToken {
 
 model Customer {
   id             String         @id @default(uuid())
+  branchId       String
   fullName       String
   phone          String
   alternatePhone String?
@@ -193,7 +196,11 @@ model Customer {
   deletedAt      DateTime?
   devices        Device[]
   tickets        RepairTicket[]
+  branch         Branch         @relation(fields: [branchId], references: [id])
 
+  @@index([branchId])
+  @@index([branchId, phone])
+  @@index([branchId, email])
   @@index([fullName])
   @@index([phone])
   @@index([email])
@@ -201,6 +208,7 @@ model Customer {
 
 model Device {
   id           String         @id @default(uuid())
+  branchId     String
   customerId   String
   category     String
   brand        String
@@ -213,8 +221,13 @@ model Device {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   customer     Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  branch       Branch         @relation(fields: [branchId], references: [id])
   tickets      RepairTicket[]
 
+  @@index([branchId])
+  @@index([branchId, customerId])
+  @@index([branchId, serialNumber])
+  @@index([branchId, imeiNumber])
   @@index([customerId])
   @@index([serialNumber])
   @@index([imeiNumber])

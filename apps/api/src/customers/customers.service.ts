@@ -25,25 +25,17 @@ export class CustomersService {
       return;
     }
 
-    const hasTickets = await this.prisma.repairTicket.count({
-      where: { customerId },
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { branchId: true },
     });
 
-    if (hasTickets === 0) {
-      return;
+    if (!customer) {
+      throw new NotFoundException("Customer not found");
     }
 
-    const accessibleTicket = await this.prisma.repairTicket.findFirst({
-      where: {
-        customerId,
-        branchId: {
-          in: actor.branches?.map((branch) => branch.id) ?? [],
-        },
-      },
-      select: { id: true },
-    });
-
-    if (!accessibleTicket) {
+    const allowed = actor.branches?.map((b) => b.id) || [];
+    if (!allowed.includes(customer.branchId)) {
       throw new ForbiddenException("You do not have access to this customer.");
     }
   }
@@ -58,22 +50,30 @@ export class CustomersService {
       });
     }
 
-    const { fullName, phone, email, address, notes, alternatePhone } =
+    const { fullName, phone, email, address, notes, alternatePhone, branchId } =
       parsed.data;
 
-    // Check duplicate phone where reasonably possible
+    if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
+      const allowed = actor.branches?.map((b) => b.id) || [];
+      if (!allowed.includes(branchId)) {
+        throw new ForbiddenException("You do not have access to create a customer in this branch.");
+      }
+    }
+
+    // Check duplicate phone within the same branch
     const existing = await this.prisma.customer.findFirst({
-      where: { phone, deletedAt: null },
+      where: { phone, branchId, deletedAt: null },
     });
     if (existing) {
       throw new BadRequestException(
-        "A customer with this phone number already exists.",
+        "A customer with this phone number already exists in this branch.",
       );
     }
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const customer = await tx.customer.create({
         data: {
+          branchId,
           fullName,
           phone,
           alternatePhone,
@@ -109,16 +109,7 @@ export class CustomersService {
     // Branch isolation scope
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
       andClauses.push({
-        OR: [
-          { tickets: { none: {} } },
-          {
-            tickets: {
-              some: {
-                branchId: { in: actor.branches?.map((b) => b.id) || [] },
-              },
-            },
-          },
-        ],
+        branchId: { in: actor.branches?.map((b) => b.id) || [] },
       });
     }
 

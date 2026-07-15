@@ -254,7 +254,8 @@ async function main() {
   ];
 
   const customers: any[] = [];
-  for (const c of customerNames) {
+  for (let i = 0; i < customerNames.length; i++) {
+    const c = customerNames[i];
     const cust = await prisma.customer.create({
       data: {
         fullName: c.name,
@@ -262,6 +263,7 @@ async function main() {
         email: c.email,
         address: "789 Elm Road, Metropolis",
         notes: "Regular customer",
+        branchId: i % 2 === 0 ? branchA.id : branchB.id,
       },
     });
     customers.push(cust);
@@ -374,6 +376,7 @@ async function main() {
     const dev = await prisma.device.create({
       data: {
         customerId: customers[d.customerIndex].id,
+        branchId: customers[d.customerIndex].branchId,
         category: d.category,
         brand: d.brand,
         model: d.model,
@@ -565,15 +568,22 @@ async function main() {
 
   console.log("Seeding repair tickets...");
   for (const t of statusesList) {
-    const num = await generateTicketNumber(t.branch.code);
+    const assignedBranch = customers[t.customerIdx].branchId === branchA.id ? branchA : branchB;
+    const assignedCreator = assignedBranch.id === branchA.id ? frontDeskA : frontDeskB;
+    let assignedTech = t.tech;
+    if (assignedTech) {
+        assignedTech = assignedBranch.id === branchA.id ? techA1 : techB1;
+    }
+
+    const num = await generateTicketNumber(assignedBranch.code);
     const ticket = await prisma.repairTicket.create({
       data: {
         ticketNumber: num,
-        branchId: t.branch.id,
+        branchId: assignedBranch.id,
         customerId: customers[t.customerIdx].id,
         deviceId: devices[t.deviceIdx].id,
-        assignedTechnicianId: t.tech ? t.tech.id : null,
-        createdById: t.creator.id,
+        assignedTechnicianId: assignedTech ? assignedTech.id : null,
+        createdById: assignedCreator.id,
         priority: TicketPriority.NORMAL,
         status: t.status,
         reportedProblem: "Device will not power on and does not charge.",
@@ -606,7 +616,7 @@ async function main() {
           : null,
         deliveredAt: t.status === TicketStatus.DELIVERED ? new Date() : null,
         deliveredById:
-          t.status === TicketStatus.DELIVERED ? t.creator.id : null,
+          t.status === TicketStatus.DELIVERED ? assignedCreator.id : null,
         deliveryNotes:
           t.status === TicketStatus.DELIVERED
             ? "Delivered to customer in person."
@@ -622,17 +632,17 @@ async function main() {
         newStatus: t.status,
         publicNote: "Intake completed successfully.",
         internalNote: "Ticket automatically set to " + t.status,
-        changedById: t.creator.id,
+        changedById: assignedCreator.id,
       },
     });
 
     // If a tech is assigned, write assignment history
-    if (t.tech) {
+    if (assignedTech) {
       await prisma.technicianAssignmentHistory.create({
         data: {
           repairTicketId: ticket.id,
-          technicianId: t.tech.id,
-          assignedById: t.creator.id,
+          technicianId: assignedTech.id,
+          assignedById: assignedCreator.id,
         },
       });
 
@@ -645,7 +655,7 @@ async function main() {
         const diag = await prisma.diagnosis.create({
           data: {
             repairTicketId: ticket.id,
-            technicianId: t.tech.id,
+            technicianId: assignedTech.id,
             faultCategory: "Power Management IC",
             diagnosticFindings:
               "Found PMIC short circuit causing power failure.",
@@ -664,7 +674,7 @@ async function main() {
           where: { name: "estimate" },
           data: { value: { increment: 1 } },
         });
-        const estNum = `EST-${t.branch.code}-2026-${String(estCounter.value).padStart(6, "0")}`;
+        const estNum = `EST-${assignedBranch.code}-2026-${String(estCounter.value).padStart(6, "0")}`;
 
         const estStatus = (
           [TicketStatus.WAITING_FOR_APPROVAL] as any[]
@@ -689,7 +699,7 @@ async function main() {
             customerNotes:
               "Please approve the estimate to proceed with the repair.",
             internalNotes: "Cost of PMIC: $20, Labour margin: $100",
-            createdById: t.creator.id,
+            createdById: assignedCreator.id,
             sentAt: new Date(),
             approvedAt:
               estStatus === EstimateStatus.APPROVED ? new Date() : null,
@@ -751,7 +761,7 @@ async function main() {
             where: { name: "invoice" },
             data: { value: { increment: 1 } },
           });
-          const invNum = `INV-${t.branch.code}-2026-${String(invCounter.value).padStart(6, "0")}`;
+          const invNum = `INV-${assignedBranch.code}-2026-${String(invCounter.value).padStart(6, "0")}`;
 
           const isPaid =
             t.status === TicketStatus.DELIVERED
@@ -772,7 +782,7 @@ async function main() {
               dueDate: new Date(),
               customerNotes: "Thank you for choosing RepairFlow!",
               internalNotes: "Standard invoice.",
-              createdById: t.creator.id,
+              createdById: assignedCreator.id,
             },
           });
 
@@ -804,9 +814,8 @@ async function main() {
                 invoiceId: invoice.id,
                 amount: 13200,
                 method: PaymentMethod.CARD,
-                referenceNumber: "REF-TXN-998877",
-                receivedById: t.creator.id,
-                notes: "Paid at counter via card terminal.",
+                receivedById: assignedCreator.id,
+                notes: "Paid in full at pickup.",
               },
             });
           }

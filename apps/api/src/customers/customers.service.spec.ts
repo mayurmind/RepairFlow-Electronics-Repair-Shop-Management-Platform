@@ -75,6 +75,7 @@ describe("CustomersService", () => {
       });
 
       const dto = {
+        branchId: "branch-1",
         fullName: "John Doe",
         phone: "+1234567890",
         email: "john@example.com",
@@ -90,6 +91,7 @@ describe("CustomersService", () => {
       mockPrismaService.customer.findFirst.mockResolvedValue({ id: "cust-1" });
 
       const dto = {
+        branchId: "branch-1",
         fullName: "John Doe",
         phone: "+1234567890",
       };
@@ -101,6 +103,7 @@ describe("CustomersService", () => {
 
     it("should fail if phone is less than 5 characters", async () => {
       const dto = {
+        branchId: "branch-1",
         fullName: "John Doe",
         phone: "123",
       };
@@ -112,6 +115,7 @@ describe("CustomersService", () => {
 
     it("should fail if email is invalid format", async () => {
       const dto = {
+        branchId: "branch-1",
         fullName: "John Doe",
         phone: "+1234567890",
         email: "invalid-email",

@@ -97,6 +97,7 @@ export const updateUserSchema = z.object({
 });
 
 export const createCustomerSchema = z.object({
+  branchId: z.string().uuid("Invalid branch selection"),
   fullName: z.string().min(2, "Customer name must be at least 2 characters"),
   phone: z.string().min(5, "Phone number must be at least 5 characters"),
   alternatePhone: z.string().optional().nullable(),

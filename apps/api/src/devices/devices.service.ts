@@ -30,26 +30,11 @@ export class DevicesService {
 
     // Branch isolation check
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      const hasTickets = await this.prisma.repairTicket.count({
-        where: { customerId },
-      });
-
-      if (hasTickets > 0) {
-        const accessibleTicket = await this.prisma.repairTicket.findFirst({
-          where: {
-            customerId,
-            branchId: {
-              in: actor.branches?.map((branch) => branch.id) ?? [],
-            },
-          },
-          select: { id: true },
-        });
-
-        if (!accessibleTicket) {
-          throw new ForbiddenException(
-            "You do not have access to this customer.",
-          );
-        }
+      const allowed = actor.branches?.map((b) => b.id) || [];
+      if (!allowed.includes(customer.branchId)) {
+        throw new ForbiddenException(
+          "You do not have access to this customer.",
+        );
       }
     }
     return customer;
@@ -61,7 +46,7 @@ export class DevicesService {
     actor: AuthenticatedUser,
   ) {
     // Load & verify customer access
-    await this.checkCustomerAccess(customerId, actor);
+    const customer = await this.checkCustomerAccess(customerId, actor);
 
     // Parse with zod for service safety & test compatibility
     const parsed = createDeviceSchema.safeParse(dto);
@@ -87,6 +72,7 @@ export class DevicesService {
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const device = await tx.device.create({
         data: {
+          branchId: customer.branchId,
           customerId,
           category,
           brand,
@@ -126,21 +112,10 @@ export class DevicesService {
       where.customerId = query.customerId;
     }
 
-    // Branch isolation: limit devices to those owned by accessible customers
+    // Branch isolation: limit devices to those owned by accessible branches
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
       andClauses.push({
-        customer: {
-          OR: [
-            { tickets: { none: {} } },
-            {
-              tickets: {
-                some: {
-                  branchId: { in: actor.branches?.map((b) => b.id) || [] },
-                },
-              },
-            },
-          ],
-        },
+        branchId: { in: actor.branches?.map((b) => b.id) || [] },
       });
     }
 
