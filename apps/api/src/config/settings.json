@@ -1,0 +1,8 @@
+{
+  "companyName": "RepairFlow Service",
+  "phone": "+1-555-0199",
+  "email": "contact@repairflow.com",
+  "taxRate": 10,
+  "currency": "USD",
+  "termsAndConditions": "All repairs carry a 90-day warranty on replaced parts. Payments are due within 7 days of completion."
+}

@@ -11,6 +11,7 @@ import {
 import { NotificationsService } from "./notifications.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { AuthenticatedUser } from "../auth/types/authenticated-user.type";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 
 @ApiTags("Notifications")
@@ -23,7 +24,7 @@ export class NotificationsController {
   @Get()
   @ApiOperation({ summary: "Get current user notifications" })
   async findAll(
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
     @Query("isRead") isReadStr?: string,
   ) {
     const isRead =
@@ -37,14 +38,17 @@ export class NotificationsController {
 
   @Patch("read-all")
   @ApiOperation({ summary: "Mark all notifications as read" })
-  async markAllAsRead(@CurrentUser() actor: any) {
+  async markAllAsRead(@CurrentUser() actor: AuthenticatedUser) {
     await this.notificationsService.markAllAsRead(actor.id);
     return { success: true };
   }
 
   @Patch(":id/read")
   @ApiOperation({ summary: "Mark a specific notification as read" })
-  async markAsRead(@CurrentUser() actor: any, @Param("id") id: string) {
+  async markAsRead(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param("id") id: string,
+  ) {
     const notification = await this.notificationsService.markAsRead(
       id,
       actor.id,
@@ -54,7 +58,10 @@ export class NotificationsController {
 
   @Delete(":id")
   @ApiOperation({ summary: "Delete a notification" })
-  async remove(@CurrentUser() actor: any, @Param("id") id: string) {
+  async remove(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param("id") id: string,
+  ) {
     await this.notificationsService.remove(id, actor.id);
     return { success: true };
   }

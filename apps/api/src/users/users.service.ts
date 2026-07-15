@@ -15,6 +15,7 @@ import {
 import { hash } from "@node-rs/argon2";
 import { UserRole, UserStatus } from "@repairflow/shared-types";
 import { UserResponseMapper } from "./mappers/user-response.mapper";
+import { AuthenticatedUser } from "../auth/types/authenticated-user.type";
 import type { Prisma } from "@prisma/client";
 import {
   AuthorizationService,
@@ -30,11 +31,11 @@ export class UsersService {
     private authz: AuthorizationService,
   ) {}
 
-  private getActorContext(actor: any): ActorContext {
+  private getActorContext(actor: AuthenticatedUser): ActorContext {
     return {
       id: actor.id,
       role: actor.role,
-      branchIds: actor.branches?.map((b: any) => b.id) || [],
+      branchIds: actor.branches?.map((b) => b.id) || [],
     };
   }
 
@@ -46,7 +47,7 @@ export class UsersService {
     };
   }
 
-  async create(data: any, actor: any) {
+  async create(data: any, actor: AuthenticatedUser) {
     const parsed = createUserSchema.safeParse(data);
     if (!parsed.success) {
       throw new BadRequestException({
@@ -117,7 +118,7 @@ export class UsersService {
       page?: number;
       limit?: number;
     },
-    actor: any,
+    actor: AuthenticatedUser,
   ) {
     const p = paginationSchema.safeParse({
       page: query.page,
@@ -188,7 +189,7 @@ export class UsersService {
     };
   }
 
-  async findOne(id: string, actor: any) {
+  async findOne(id: string, actor: AuthenticatedUser) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
@@ -210,7 +211,7 @@ export class UsersService {
     return UserResponseMapper.toSafeUser(user);
   }
 
-  async update(id: string, data: any, actor: any) {
+  async update(id: string, data: any, actor: AuthenticatedUser) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: { userBranches: { include: { branch: true } } },
@@ -252,7 +253,7 @@ export class UsersService {
     });
   }
 
-  async updateStatus(id: string, status: UserStatus, actor: any) {
+  async updateStatus(id: string, status: UserStatus, actor: AuthenticatedUser) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: { userBranches: { include: { branch: true } } },
@@ -295,7 +296,7 @@ export class UsersService {
     });
   }
 
-  async updateRole(id: string, role: UserRole, actor: any) {
+  async updateRole(id: string, role: UserRole, actor: AuthenticatedUser) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: { userBranches: { include: { branch: true } } },
@@ -336,7 +337,11 @@ export class UsersService {
     });
   }
 
-  async assignBranch(userId: string, branchId: string, actor: any) {
+  async assignBranch(
+    userId: string,
+    branchId: string,
+    actor: AuthenticatedUser,
+  ) {
     // Check if user and branch exist
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -385,7 +390,11 @@ export class UsersService {
     });
   }
 
-  async removeBranch(userId: string, branchId: string, actor: any) {
+  async removeBranch(
+    userId: string,
+    branchId: string,
+    actor: AuthenticatedUser,
+  ) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { userBranches: { include: { branch: true } } },

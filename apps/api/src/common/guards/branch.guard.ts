@@ -1,100 +1,50 @@
 import {
-  Injectable,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Injectable,
 } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
+import type { AuthenticatedRequest } from "../types/authenticated-request.type";
 
 @Injectable()
 export class BranchAccessGuard implements CanActivate {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const { user } = request;
 
     if (!user) {
       return false;
     }
 
-    // SYSTEM_ADMIN and OWNER bypass all branch check barriers
     if (user.role === "SYSTEM_ADMIN" || user.role === "OWNER") {
       return true;
     }
 
-    // Extract user assigned branch list
-    const userBranches = user.branches || [];
-    const assignedBranchIds = userBranches.map((b: any) => b.id);
+    const assignedBranchIds = user.branches.map(({ id }) => id);
+    const targetBranchId: string | null = this.extractExplicitBranchId(request);
+    const resourceId = request.params?.id;
 
-    // Extract target branch ID from params, query, or body
-    let targetBranchId: string | null = null;
-    const path = request.url;
-    const method = request.method;
+    if (resourceId) {
+      if (request.path.includes("/users")) {
+        await this.assertSharedUserBranch(resourceId, assignedBranchIds);
+      } else {
+        const hasAccess = await this.assertResourceAccess(
+          request.path,
+          resourceId,
+          assignedBranchIds,
+        );
 
-    if (request.body && request.body.branchId) {
-      targetBranchId = request.body.branchId;
-    } else if (request.query && request.query.branchId) {
-      targetBranchId = request.query.branchId as string;
-    } else if (request.params && request.params.branchId) {
-      targetBranchId = request.params.branchId;
-    }
-
-    // Dynamic lookups based on resource in path for mutations and lookups
-    if (request.params && request.params.id) {
-      const id = request.params.id;
-
-      if (path.includes("/tickets")) {
-        const t = await this.prisma.repairTicket.findUnique({ where: { id } });
-        if (t) targetBranchId = t.branchId;
-      } else if (path.includes("/estimates")) {
-        const e = await this.prisma.estimate.findUnique({
-          where: { id },
-          include: { repairTicket: true },
-        });
-        if (e) targetBranchId = e.repairTicket.branchId;
-      } else if (path.includes("/invoices")) {
-        const i = await this.prisma.invoice.findUnique({
-          where: { id },
-          include: { repairTicket: true },
-        });
-        if (i) targetBranchId = i.repairTicket.branchId;
-      } else if (path.includes("/attachments")) {
-        const a = await this.prisma.attachment.findUnique({
-          where: { id },
-          include: { repairTicket: true },
-        });
-        if (a) targetBranchId = a.repairTicket.branchId;
-      } else if (path.includes("/branches")) {
-        targetBranchId = id; // direct branch ID
-      } else if (path.includes("/users")) {
-        const targetUser = await this.prisma.user.findUnique({
-          where: { id },
-          include: { userBranches: true },
-        });
-        if (targetUser) {
-          const targetUserBranchIds = targetUser.userBranches.map(
-            (userBranch: { branchId: string }) => userBranch.branchId,
+        if (hasAccess === false) {
+          throw new ForbiddenException(
+            "Access denied: Resource not found or you do not have permission.",
           );
-          if (targetUserBranchIds.length > 0) {
-            const sharesBranch = targetUserBranchIds.some((branchId: string) =>
-              assignedBranchIds.includes(branchId),
-            );
-            if (!sharesBranch) {
-              throw new ForbiddenException(
-                "Access denied: You do not share a branch with this user.",
-              );
-            }
-          } else {
-            throw new ForbiddenException(
-              "Access denied: You do not have permission to access this user.",
-            );
-          }
         }
       }
     }
 
-    // If the endpoint targets a specific branch, verify it matches
     if (targetBranchId && !assignedBranchIds.includes(targetBranchId)) {
       throw new ForbiddenException(
         "Access denied: You do not belong to this branch.",
@@ -102,5 +52,91 @@ export class BranchAccessGuard implements CanActivate {
     }
 
     return true;
+  }
+
+  private extractExplicitBranchId(
+    request: AuthenticatedRequest,
+  ): string | null {
+    const body = request.body as Record<string, unknown> | undefined;
+    const bodyBranchId = body?.branchId;
+    if (typeof bodyBranchId === "string") {
+      return bodyBranchId;
+    }
+
+    const queryBranchId = request.query?.branchId;
+    if (typeof queryBranchId === "string") {
+      return queryBranchId;
+    }
+
+    const paramBranchId = request.params?.branchId;
+    return typeof paramBranchId === "string" ? paramBranchId : null;
+  }
+
+  private async assertSharedUserBranch(
+    userId: string,
+    assignedBranchIds: string[],
+  ): Promise<void> {
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { userBranches: { select: { branchId: true } } },
+    });
+
+    const targetBranchIds =
+      targetUser?.userBranches.map(
+        ({ branchId }: { branchId: string }) => branchId,
+      ) ?? [];
+    const sharesBranch = targetBranchIds.some((branchId: string) =>
+      assignedBranchIds.includes(branchId),
+    );
+
+    if (!sharesBranch) {
+      throw new ForbiddenException(
+        "Access denied: You do not share a branch with this user.",
+      );
+    }
+  }
+
+  private async assertResourceAccess(
+    path: string,
+    id: string,
+    assignedBranchIds: string[],
+  ): Promise<boolean | null> {
+    if (path.includes("/tickets")) {
+      const ticket = await this.prisma.repairTicket.findFirst({
+        where: { id, branchId: { in: assignedBranchIds } },
+        select: { id: true },
+      });
+      return ticket !== null;
+    }
+
+    if (path.includes("/estimates")) {
+      const estimate = await this.prisma.estimate.findFirst({
+        where: { id, repairTicket: { branchId: { in: assignedBranchIds } } },
+        select: { id: true },
+      });
+      return estimate !== null;
+    }
+
+    if (path.includes("/invoices")) {
+      const invoice = await this.prisma.invoice.findFirst({
+        where: { id, repairTicket: { branchId: { in: assignedBranchIds } } },
+        select: { id: true },
+      });
+      return invoice !== null;
+    }
+
+    if (path.includes("/attachments")) {
+      const attachment = await this.prisma.attachment.findFirst({
+        where: { id, repairTicket: { branchId: { in: assignedBranchIds } } },
+        select: { id: true },
+      });
+      return attachment !== null;
+    }
+
+    if (path.includes("/branches")) {
+      return assignedBranchIds.includes(id);
+    }
+
+    return null;
   }
 }

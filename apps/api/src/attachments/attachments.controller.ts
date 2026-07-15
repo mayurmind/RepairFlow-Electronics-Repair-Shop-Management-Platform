@@ -11,11 +11,13 @@ import {
   UploadedFile,
   Res,
   NotFoundException,
+  ParseUUIDPipe,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { AttachmentsService } from "./attachments.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { AuthenticatedUser } from "../auth/types/authenticated-user.type";
 import { AttachmentCategory } from "@repairflow/shared-types";
 import {
   ApiTags,
@@ -38,16 +40,16 @@ export class AttachmentsController {
   @ApiConsumes("multipart/form-data")
   @ApiOperation({ summary: "Upload file attachment for repair ticket" })
   async upload(
-    @Param("ticketId") ticketId: string,
+    @Param("ticketId", new ParseUUIDPipe({ version: "4" })) ticketId: string,
     @UploadedFile() file: any,
     @Body("category") category: AttachmentCategory,
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
   ) {
     const attachment = await this.attachmentsService.uploadAttachment(
       ticketId,
       file,
       category || "OTHER",
-      actor.id,
+      actor,
     );
     return { success: true, data: attachment };
   }
@@ -56,8 +58,14 @@ export class AttachmentsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: "List attachments for a repair ticket" })
-  async findForTicket(@Param("ticketId") ticketId: string) {
-    const attachments = await this.attachmentsService.findForTicket(ticketId);
+  async findForTicket(
+    @Param("ticketId", new ParseUUIDPipe({ version: "4" })) ticketId: string,
+    @CurrentUser() actor: AuthenticatedUser,
+  ) {
+    const attachments = await this.attachmentsService.findForTicket(
+      ticketId,
+      actor,
+    );
     return { success: true, data: attachments };
   }
 
@@ -75,8 +83,11 @@ export class AttachmentsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: "Delete attachment" })
-  async remove(@Param("id") id: string) {
-    await this.attachmentsService.remove(id);
+  async remove(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @CurrentUser() actor: AuthenticatedUser,
+  ) {
+    await this.attachmentsService.remove(id, actor);
     return { success: true };
   }
 }

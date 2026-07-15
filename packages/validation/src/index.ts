@@ -105,8 +105,21 @@ export const createCustomerSchema = z.object({
   notes: z.string().optional().nullable(),
 });
 
+const deviceCategories = [
+  "Mobile phone",
+  "Laptop",
+  "Gaming console",
+  "Television",
+  "Camera",
+  "Desktop computer",
+  "Tablet",
+  "Other",
+] as const;
+
 export const createDeviceSchema = z.object({
-  category: z.string().min(2, "Category is required"),
+  category: z.enum(deviceCategories, {
+    required_error: "Category is required",
+  }),
   brand: z.string().min(1, "Brand is required"),
   model: z.string().min(1, "Model is required"),
   serialNumber: z.string().optional().nullable(),

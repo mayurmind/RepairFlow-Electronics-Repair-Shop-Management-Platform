@@ -1,17 +1,18 @@
 import { Injectable, ForbiddenException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
+import { AuthenticatedUser } from "../auth/types/authenticated-user.type";
 
 @Injectable()
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
-  async getDashboard(actor: any, branchId?: string) {
+  async getDashboard(actor: AuthenticatedUser, branchId?: string) {
     const where: any = {};
 
     // Branch isolation for non-admins
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      const assignedBranchIds = actor.branches?.map((b: any) => b.id) || [];
+      const assignedBranchIds = actor.branches?.map((b) => b.id) || [];
       where.branchId = { in: assignedBranchIds };
     } else if (branchId) {
       where.branchId = branchId;
@@ -84,7 +85,7 @@ export class ReportsService {
       };
 
       if (actor.role === "BRANCH_MANAGER") {
-        const assignedBranchIds = actor.branches?.map((b: any) => b.id) || [];
+        const assignedBranchIds = actor.branches?.map((b) => b.id) || [];
         revenueWhere.repairTicket = { branchId: { in: assignedBranchIds } };
       } else if (branchId) {
         revenueWhere.repairTicket = { branchId };
@@ -110,7 +111,7 @@ export class ReportsService {
     if (actor.role !== "TECHNICIAN") {
       const branchIdsFilter =
         actor.role === "BRANCH_MANAGER"
-          ? actor.branches?.map((b: any) => b.id) || []
+          ? actor.branches?.map((b) => b.id) || []
           : branchId
             ? [branchId]
             : [];
@@ -172,7 +173,7 @@ export class ReportsService {
   }
 
   async getRevenueReport(
-    actor: any,
+    actor: AuthenticatedUser,
     startDate: string,
     endDate: string,
     branchId?: string,
@@ -191,7 +192,7 @@ export class ReportsService {
     };
 
     if (actor.role === "BRANCH_MANAGER") {
-      const assignedBranchIds = actor.branches?.map((b: any) => b.id) || [];
+      const assignedBranchIds = actor.branches?.map((b) => b.id) || [];
       where.invoice = {
         repairTicket: { branchId: { in: assignedBranchIds } },
       };
@@ -255,7 +256,11 @@ export class ReportsService {
     };
   }
 
-  async getBranchPerformance(actor: any, startDate: string, endDate: string) {
+  async getBranchPerformance(
+    actor: AuthenticatedUser,
+    startDate: string,
+    endDate: string,
+  ) {
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
       throw new ForbiddenException(
         "Only system administrators and owners can access company-wide branch reports.",

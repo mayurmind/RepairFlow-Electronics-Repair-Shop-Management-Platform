@@ -246,7 +246,7 @@ export default function DashboardLayout({
 
       {/* Sidebar - Desktop */}
       <aside
-        className={`hidden md:flex flex-col justify-between border-r border-slate-200 bg-white sticky top-0 h-screen transition-all duration-300 z-30 ${
+        className={`hidden md:flex flex-col justify-between border-r border-slate-200 bg-white sticky top-0 h-screen transition-all duration-300 z-[60] ${
           sidebarExpanded ? "w-64" : "w-20"
         }`}
       >

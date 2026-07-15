@@ -14,6 +14,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../common/guards/role.guard";
 import { Roles } from "../common/decorators/roles.decorator";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
+import { AuthenticatedUser } from "../auth/types/authenticated-user.type";
 import { InvoiceStatus } from "@repairflow/shared-types";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { BranchAccessGuard } from "../common/guards/branch.guard";
@@ -33,7 +34,7 @@ export class InvoicesController {
   async create(
     @Param("ticketId") ticketId: string,
     @Body() body: any,
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
   ) {
     const invoice = await this.invoicesService.createFromTicket(
       ticketId,
@@ -46,7 +47,7 @@ export class InvoicesController {
   @Get("invoices")
   @ApiOperation({ summary: "List and filter invoices" })
   async findAll(
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
     @Query("status") status?: InvoiceStatus,
     @Query("page") page?: number,
     @Query("limit") limit?: number,
@@ -65,7 +66,10 @@ export class InvoicesController {
 
   @Get("invoices/:id")
   @ApiOperation({ summary: "Get invoice details" })
-  async findOne(@Param("id") id: string, @CurrentUser() actor: any) {
+  async findOne(
+    @Param("id") id: string,
+    @CurrentUser() actor: AuthenticatedUser,
+  ) {
     const invoice = await this.invoicesService.findOne(id, actor);
     return { success: true, data: invoice };
   }
@@ -76,7 +80,7 @@ export class InvoicesController {
   async recordPayment(
     @Param("id") id: string,
     @Body() body: any,
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
   ) {
     const result = await this.invoicesService.recordPayment(id, body, actor);
     return { success: true, ...result };
@@ -84,7 +88,10 @@ export class InvoicesController {
 
   @Get("invoices/:id/payments")
   @ApiOperation({ summary: "Get payments history recorded on this invoice" })
-  async getPayments(@Param("id") id: string, @CurrentUser() actor: any) {
+  async getPayments(
+    @Param("id") id: string,
+    @CurrentUser() actor: AuthenticatedUser,
+  ) {
     const payments = await this.invoicesService.getPayments(id, actor);
     return { success: true, data: payments };
   }
@@ -92,7 +99,10 @@ export class InvoicesController {
   @Post("invoices/:id/void")
   @Roles("SYSTEM_ADMIN", "OWNER", "BRANCH_MANAGER")
   @ApiOperation({ summary: "Void unpaid invoice" })
-  async voidInvoice(@Param("id") id: string, @CurrentUser() actor: any) {
+  async voidInvoice(
+    @Param("id") id: string,
+    @CurrentUser() actor: AuthenticatedUser,
+  ) {
     const invoice = await this.invoicesService.voidInvoice(id, actor);
     return { success: true, data: invoice };
   }
@@ -101,7 +111,7 @@ export class InvoicesController {
   @ApiOperation({ summary: "Download invoice PDF" })
   async downloadPdf(
     @Param("id") id: string,
-    @CurrentUser() actor: any,
+    @CurrentUser() actor: AuthenticatedUser,
     @Res() res: Response,
   ) {
     const invoice = await this.invoicesService.findOne(id, actor);

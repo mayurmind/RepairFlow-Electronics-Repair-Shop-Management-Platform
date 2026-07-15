@@ -9,6 +9,7 @@ import { AuditLogsService } from "../audit-logs/audit-logs.service";
 import { createEstimateSchema } from "@repairflow/validation";
 import * as crypto from "crypto";
 import { EstimateStatus, TicketStatus } from "@repairflow/shared-types";
+import { AuthenticatedUser } from "../auth/types/authenticated-user.type";
 import type { Prisma } from "@prisma/client";
 
 @Injectable()
@@ -34,7 +35,7 @@ export class EstimatesService {
     return `EST-${branchCode}-2026-${seqStr}`;
   }
 
-  async create(ticketId: string, data: any, actor: any) {
+  async create(ticketId: string, data: any, actor: AuthenticatedUser) {
     // Validate ticket exists
     const ticket = await this.prisma.repairTicket.findUnique({
       where: { id: ticketId },
@@ -118,7 +119,7 @@ export class EstimatesService {
   }
 
   async findAll(
-    actor: any,
+    actor: AuthenticatedUser,
     query: {
       ticketId?: string;
       status?: EstimateStatus;
@@ -134,7 +135,7 @@ export class EstimatesService {
 
     // Branch access isolation
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      const assignedBranchIds = actor.branches?.map((b: any) => b.id) || [];
+      const assignedBranchIds = actor.branches?.map((b) => b.id) || [];
       where.repairTicket = {
         branchId: { in: assignedBranchIds },
       };
@@ -172,7 +173,7 @@ export class EstimatesService {
     };
   }
 
-  async findOne(id: string, actor: any) {
+  async findOne(id: string, actor: AuthenticatedUser) {
     const estimate = await this.prisma.estimate.findUnique({
       where: { id },
       include: {
@@ -195,7 +196,7 @@ export class EstimatesService {
 
     // Branch authorization check
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      const assignedBranchIds = actor.branches?.map((b: any) => b.id) || [];
+      const assignedBranchIds = actor.branches?.map((b) => b.id) || [];
       if (!assignedBranchIds.includes(estimate.repairTicket.branchId)) {
         throw new ForbiddenException("Branch access isolation violation.");
       }
@@ -204,7 +205,7 @@ export class EstimatesService {
     return estimate;
   }
 
-  async send(id: string, actor: any) {
+  async send(id: string, actor: AuthenticatedUser) {
     const estimate = await this.findOne(id, actor);
     if (estimate.status !== "DRAFT") {
       throw new BadRequestException("Only draft estimates can be sent.");
@@ -272,7 +273,7 @@ export class EstimatesService {
     });
   }
 
-  async cancel(id: string, actor: any) {
+  async cancel(id: string, actor: AuthenticatedUser) {
     const estimate = await this.findOne(id, actor);
     if (["APPROVED", "REJECTED", "CANCELLED"].includes(estimate.status)) {
       throw new BadRequestException(

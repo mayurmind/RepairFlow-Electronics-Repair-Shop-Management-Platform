@@ -2,9 +2,11 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { AttachmentCategory } from "@repairflow/shared-types";
+import { AuthenticatedUser } from "../auth/types/authenticated-user.type";
 import * as fs from "fs";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
@@ -23,7 +25,7 @@ export class AttachmentsService {
     ticketId: string,
     file: any,
     category: AttachmentCategory,
-    uploadedById: string,
+    actor: AuthenticatedUser,
   ) {
     // Validate ticket exists
     const ticket = await this.prisma.repairTicket.findUnique({
@@ -31,6 +33,23 @@ export class AttachmentsService {
     });
     if (!ticket) {
       throw new NotFoundException("Repair ticket not found.");
+    }
+
+    // Branch check
+    if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
+      if (!actor.branches?.map((b) => b.id).includes(ticket.branchId)) {
+        throw new ForbiddenException("You do not belong to this branch.");
+      }
+    }
+
+    // Technician check
+    if (
+      actor.role === "TECHNICIAN" &&
+      ticket.assignedTechnicianId !== actor.id
+    ) {
+      throw new ForbiddenException(
+        "You are not assigned to this repair ticket.",
+      );
     }
 
     if (!file) {
@@ -51,7 +70,7 @@ export class AttachmentsService {
     return this.prisma.attachment.create({
       data: {
         repairTicketId: ticketId,
-        uploadedById,
+        uploadedById: actor.id,
         category: category as any,
         originalName: file.originalname,
         storageKey,
@@ -62,12 +81,29 @@ export class AttachmentsService {
     });
   }
 
-  async findForTicket(ticketId: string) {
+  async findForTicket(ticketId: string, actor: AuthenticatedUser) {
     const ticket = await this.prisma.repairTicket.findUnique({
       where: { id: ticketId },
     });
     if (!ticket) {
       throw new NotFoundException("Repair ticket not found.");
+    }
+
+    // Branch check
+    if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
+      if (!actor.branches?.map((b) => b.id).includes(ticket.branchId)) {
+        throw new ForbiddenException("You do not belong to this branch.");
+      }
+    }
+
+    // Technician check
+    if (
+      actor.role === "TECHNICIAN" &&
+      ticket.assignedTechnicianId !== actor.id
+    ) {
+      throw new ForbiddenException(
+        "You are not assigned to this repair ticket.",
+      );
     }
 
     return this.prisma.attachment.findMany({
@@ -85,13 +121,35 @@ export class AttachmentsService {
     return filePath;
   }
 
-  async remove(id: string) {
+  async remove(id: string, actor: AuthenticatedUser) {
     const attachment = await this.prisma.attachment.findUnique({
       where: { id },
+      include: { repairTicket: true },
     });
 
     if (!attachment) {
       throw new NotFoundException("Attachment not found.");
+    }
+
+    // Branch check
+    if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
+      if (
+        !actor.branches
+          ?.map((b) => b.id)
+          .includes(attachment.repairTicket.branchId)
+      ) {
+        throw new ForbiddenException("You do not belong to this branch.");
+      }
+    }
+
+    // Technician check
+    if (
+      actor.role === "TECHNICIAN" &&
+      attachment.repairTicket.assignedTechnicianId !== actor.id
+    ) {
+      throw new ForbiddenException(
+        "You are not assigned to this repair ticket.",
+      );
     }
 
     // Remove from DB
