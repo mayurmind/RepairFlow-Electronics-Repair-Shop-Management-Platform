@@ -3,6 +3,7 @@ import {
   IsEmail,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   MinLength,
@@ -32,6 +33,7 @@ const normalizeOptionalPhone = ({ value }: { value: unknown }): unknown => {
 
 export class CreateCustomerDto {
   @ApiProperty({ example: "123e4567-e89b-12d3-a456-426614174000" })
+  @IsUUID()
   @IsString()
   branchId!: string;
 
@@ -61,7 +63,9 @@ export class CreateCustomerDto {
 
   @ApiPropertyOptional({ example: "aarav@example.com" })
   @IsOptional()
-  @Transform(({ value }) => typeof value === "string" ? value.trim().toLowerCase() : value)
+  @Transform(({ value }) =>
+    typeof value === "string" ? value.trim().toLowerCase() : value,
+  )
   @ValidateIf((_object: object, value: unknown) => value !== "")
   @IsEmail()
   @MaxLength(254)

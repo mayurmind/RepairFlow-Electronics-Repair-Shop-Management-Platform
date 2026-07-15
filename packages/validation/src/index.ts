@@ -106,6 +106,10 @@ export const createCustomerSchema = z.object({
   notes: z.string().optional().nullable(),
 });
 
+export const updateCustomerSchema = createCustomerSchema
+  .omit({ branchId: true })
+  .partial();
+
 const deviceCategories = [
   "Mobile phone",
   "Laptop",
@@ -129,6 +133,8 @@ export const createDeviceSchema = z.object({
   variant: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
 });
+
+export const updateDeviceSchema = createDeviceSchema.partial();
 
 export const createTicketSchema = z.object({
   customerId: z.string().uuid("Invalid customer selection"),

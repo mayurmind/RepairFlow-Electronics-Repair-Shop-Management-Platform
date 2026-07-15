@@ -194,16 +194,15 @@ model Customer {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   deletedAt      DateTime?
+  branch         Branch         @relation(fields: [branchId], references: [id])
   devices        Device[]
   tickets        RepairTicket[]
-  branch         Branch         @relation(fields: [branchId], references: [id])
 
+  @@unique([id, branchId])
+  @@unique([branchId, phone])
+  @@unique([branchId, email])
   @@index([branchId])
-  @@index([branchId, phone])
-  @@index([branchId, email])
   @@index([fullName])
-  @@index([phone])
-  @@index([email])
 }
 
 model Device {
@@ -220,17 +219,15 @@ model Device {
   notes        String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  customer     Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer     Customer       @relation(fields: [customerId, branchId], references: [id, branchId], onDelete: Cascade)
   branch       Branch         @relation(fields: [branchId], references: [id])
   tickets      RepairTicket[]
 
+  @@unique([branchId, serialNumber])
+  @@unique([branchId, imeiNumber])
   @@index([branchId])
   @@index([branchId, customerId])
-  @@index([branchId, serialNumber])
-  @@index([branchId, imeiNumber])
   @@index([customerId])
-  @@index([serialNumber])
-  @@index([imeiNumber])
   @@index([brand, model])
 }
 
