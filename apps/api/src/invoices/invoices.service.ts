@@ -172,7 +172,7 @@ export class InvoicesService {
 
     // Branch isolation
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      const assignedBranchIds = actor.branches?.map(b => b.id) || [];
+      const assignedBranchIds = actor.branches?.map((b) => b.id) || [];
       where.repairTicket = {
         branchId: { in: assignedBranchIds },
       };
@@ -233,7 +233,7 @@ export class InvoicesService {
 
     // Branch isolation check
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      const assignedBranchIds = actor.branches?.map(b => b.id) || [];
+      const assignedBranchIds = actor.branches?.map((b) => b.id) || [];
       if (!assignedBranchIds.includes(invoice.repairTicket.branchId)) {
         throw new ForbiddenException("Branch access isolation violation.");
       }

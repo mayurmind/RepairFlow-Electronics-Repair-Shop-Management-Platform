@@ -127,7 +127,7 @@ export class ReportsController {
     };
 
     if (actor.role === "BRANCH_MANAGER") {
-      const branchIds = actor.branches?.map(b => b.id) || [];
+      const branchIds = actor.branches?.map((b) => b.id) || [];
       where.branchId = { in: branchIds };
     }
 
@@ -193,7 +193,7 @@ export class ReportsController {
   ) {
     const where: any = {};
     if (actor.role === "BRANCH_MANAGER") {
-      const branchIds = actor.branches?.map(b => b.id) || [];
+      const branchIds = actor.branches?.map((b) => b.id) || [];
       where.branchId = { in: branchIds };
     }
 

@@ -37,7 +37,7 @@ export class DevicesService {
 
       if (tickets.length > 0) {
         const hasAccess = tickets.some((t) =>
-          actor.branches?.map(b => b.id).includes(t.branchId),
+          actor.branches?.map((b) => b.id).includes(t.branchId),
         );
         if (!hasAccess) {
           throw new ForbiddenException(
@@ -122,13 +122,17 @@ export class DevicesService {
         customer: {
           OR: [
             { tickets: { none: {} } },
-            { tickets: { some: { branchId: { in: actor.branches?.map(b => b.id) || [] } } } },
+            {
+              tickets: {
+                some: {
+                  branchId: { in: actor.branches?.map((b) => b.id) || [] },
+                },
+              },
+            },
           ],
         },
       });
     }
-
-
 
     if (query.search) {
       andClauses.push({

@@ -20,7 +20,9 @@ describe("BranchAccessGuard", () => {
 
     mockRequest = {
       url: "",
-      get path() { return this.url; },
+      get path() {
+        return this.url;
+      },
       method: "GET",
       user: {
         role: "TECHNICIAN",

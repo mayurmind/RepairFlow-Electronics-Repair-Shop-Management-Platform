@@ -37,7 +37,7 @@ export class AttachmentsService {
 
     // Branch check
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      if (!actor.branches?.map(b => b.id).includes(ticket.branchId)) {
+      if (!actor.branches?.map((b) => b.id).includes(ticket.branchId)) {
         throw new ForbiddenException("You do not belong to this branch.");
       }
     }
@@ -91,7 +91,7 @@ export class AttachmentsService {
 
     // Branch check
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      if (!actor.branches?.map(b => b.id).includes(ticket.branchId)) {
+      if (!actor.branches?.map((b) => b.id).includes(ticket.branchId)) {
         throw new ForbiddenException("You do not belong to this branch.");
       }
     }
@@ -133,7 +133,11 @@ export class AttachmentsService {
 
     // Branch check
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      if (!actor.branches?.map(b => b.id).includes(attachment.repairTicket.branchId)) {
+      if (
+        !actor.branches
+          ?.map((b) => b.id)
+          .includes(attachment.repairTicket.branchId)
+      ) {
         throw new ForbiddenException("You do not belong to this branch.");
       }
     }

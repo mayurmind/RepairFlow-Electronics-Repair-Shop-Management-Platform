@@ -1,13 +1,10 @@
 import { Transform } from "class-transformer";
-import { IsOptional, IsString, MaxLength } from "class-validator";
+import { IsOptional, IsString, IsUUID, MaxLength } from "class-validator";
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { PaginationQueryDto } from "../../common/dto/pagination-query.dto";
 
-export class FindCustomersQueryDto extends PaginationQueryDto {
-  @ApiPropertyOptional({
-    description: "Search name, phone, or email",
-    maxLength: 120,
-  })
+export class FindDevicesQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ description: "Search brand, model, serial number, or IMEI", maxLength: 120 })
   @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === "string" ? value.trim() : value,
@@ -15,4 +12,9 @@ export class FindCustomersQueryDto extends PaginationQueryDto {
   @IsString()
   @MaxLength(120)
   search?: string;
+
+  @ApiPropertyOptional({ format: "uuid" })
+  @IsOptional()
+  @IsUUID()
+  customerId?: string;
 }

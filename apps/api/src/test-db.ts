@@ -6,7 +6,7 @@ async function main() {
   // Find front-desk user and their branches
   const actor = await prisma.user.findUnique({
     where: { email: "front.a@repairflow.com" },
-    include: { userBranches: true }
+    include: { userBranches: true },
   });
 
   if (!actor) {
@@ -14,7 +14,7 @@ async function main() {
     return;
   }
 
-  const branchIds = actor.userBranches.map(ub => ub.branchId);
+  const branchIds = actor.userBranches.map((ub) => ub.branchId);
   console.log(`Actor branch IDs: ${branchIds}`);
 
   const andClauses: any[] = [];
@@ -34,18 +34,22 @@ async function main() {
     orderBy: { createdAt: "desc" },
     include: {
       customer: {
-        select: { id: true, fullName: true, phone: true }
-      }
-    }
+        select: { id: true, fullName: true, phone: true },
+      },
+    },
   });
 
   console.log(`QUERY RESULTS (Total: ${devices.length}):`);
-  devices.forEach(d => {
-    console.log(`ID: ${d.id}, Brand: ${d.brand}, Model: ${d.model}, SN: ${d.serialNumber}, Cust: ${d.customer?.fullName}`);
+  devices.forEach((d) => {
+    console.log(
+      `ID: ${d.id}, Brand: ${d.brand}, Model: ${d.model}, SN: ${d.serialNumber}, Cust: ${d.customer?.fullName}`,
+    );
   });
 }
 
-main().catch(err => {
-  console.error(err);
-  process.exit(1);
-}).finally(() => prisma.$disconnect());
+main()
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  })
+  .finally(() => prisma.$disconnect());

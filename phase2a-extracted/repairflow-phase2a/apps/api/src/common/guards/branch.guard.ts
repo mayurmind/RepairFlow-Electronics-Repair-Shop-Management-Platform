@@ -24,24 +24,16 @@ export class BranchAccessGuard implements CanActivate {
     }
 
     const assignedBranchIds = user.branches.map(({ id }) => id);
-    const targetBranchId: string | null = this.extractExplicitBranchId(request);
+    let targetBranchId: string | null = this.extractExplicitBranchId(request);
     const resourceId = request.params?.id;
 
     if (resourceId) {
       if (request.path.includes("/users")) {
         await this.assertSharedUserBranch(resourceId, assignedBranchIds);
       } else {
-        const hasAccess = await this.assertResourceAccess(
-          request.path,
-          resourceId,
-          assignedBranchIds,
-        );
-
-        if (hasAccess === false) {
-          throw new ForbiddenException(
-            "Access denied: Resource not found or you do not have permission.",
-          );
-        }
+        targetBranchId =
+          (await this.resolveResourceBranchId(request.path, resourceId)) ??
+          targetBranchId;
       }
     }
 
@@ -54,9 +46,7 @@ export class BranchAccessGuard implements CanActivate {
     return true;
   }
 
-  private extractExplicitBranchId(
-    request: AuthenticatedRequest,
-  ): string | null {
+  private extractExplicitBranchId(request: AuthenticatedRequest): string | null {
     const body = request.body as Record<string, unknown> | undefined;
     const bodyBranchId = body?.branchId;
     if (typeof bodyBranchId === "string") {
@@ -96,45 +86,44 @@ export class BranchAccessGuard implements CanActivate {
     }
   }
 
-  private async assertResourceAccess(
+  private async resolveResourceBranchId(
     path: string,
     id: string,
-    assignedBranchIds: string[],
-  ): Promise<boolean | null> {
+  ): Promise<string | null> {
     if (path.includes("/tickets")) {
-      const ticket = await this.prisma.repairTicket.findFirst({
-        where: { id, branchId: { in: assignedBranchIds } },
-        select: { id: true },
+      const ticket = await this.prisma.repairTicket.findUnique({
+        where: { id },
+        select: { branchId: true },
       });
-      return ticket !== null;
+      return ticket?.branchId ?? null;
     }
 
     if (path.includes("/estimates")) {
-      const estimate = await this.prisma.estimate.findFirst({
-        where: { id, repairTicket: { branchId: { in: assignedBranchIds } } },
-        select: { id: true },
+      const estimate = await this.prisma.estimate.findUnique({
+        where: { id },
+        select: { repairTicket: { select: { branchId: true } } },
       });
-      return estimate !== null;
+      return estimate?.repairTicket.branchId ?? null;
     }
 
     if (path.includes("/invoices")) {
-      const invoice = await this.prisma.invoice.findFirst({
-        where: { id, repairTicket: { branchId: { in: assignedBranchIds } } },
-        select: { id: true },
+      const invoice = await this.prisma.invoice.findUnique({
+        where: { id },
+        select: { repairTicket: { select: { branchId: true } } },
       });
-      return invoice !== null;
+      return invoice?.repairTicket.branchId ?? null;
     }
 
     if (path.includes("/attachments")) {
-      const attachment = await this.prisma.attachment.findFirst({
-        where: { id, repairTicket: { branchId: { in: assignedBranchIds } } },
-        select: { id: true },
+      const attachment = await this.prisma.attachment.findUnique({
+        where: { id },
+        select: { repairTicket: { select: { branchId: true } } },
       });
-      return attachment !== null;
+      return attachment?.repairTicket.branchId ?? null;
     }
 
     if (path.includes("/branches")) {
-      return assignedBranchIds.includes(id);
+      return id;
     }
 
     return null;

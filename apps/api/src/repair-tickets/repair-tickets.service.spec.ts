@@ -200,7 +200,7 @@ describe("RepairTicketsService", () => {
     const mockTechUser = {
       id: mockTechId,
       role: "TECHNICIAN" as any,
-      branches: [{ id: mockBranchId }] as any,
+      userBranches: [{ branchId: mockBranchId }],
     };
 
     it("should assign technician successfully if technician belongs to ticket branch", async () => {
@@ -237,7 +237,7 @@ describe("RepairTicketsService", () => {
       mockPrismaService.repairTicket.findUnique.mockResolvedValue(ticket);
       mockPrismaService.user.findFirst.mockResolvedValue({
         ...mockTechUser,
-        branches: [{ id: "different-branch" }] as any,
+        userBranches: [{ branchId: "different-branch" }],
       });
 
       await expect(

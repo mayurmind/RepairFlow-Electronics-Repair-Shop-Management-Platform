@@ -34,7 +34,9 @@ export class CustomersService {
       return;
     }
 
-    const hasAccess = tickets.some((t) => actor.branches?.map(b => b.id).includes(t.branchId));
+    const hasAccess = tickets.some((t) =>
+      actor.branches?.map((b) => b.id).includes(t.branchId),
+    );
     if (!hasAccess) {
       throw new ForbiddenException("You do not have access to this customer.");
     }
@@ -103,7 +105,13 @@ export class CustomersService {
       andClauses.push({
         OR: [
           { tickets: { none: {} } },
-          { tickets: { some: { branchId: { in: actor.branches?.map(b => b.id) || [] } } } },
+          {
+            tickets: {
+              some: {
+                branchId: { in: actor.branches?.map((b) => b.id) || [] },
+              },
+            },
+          },
         ],
       });
     }

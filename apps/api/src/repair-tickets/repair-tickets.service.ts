@@ -99,7 +99,7 @@ export class RepairTicketsService {
 
     // Validate branch access for non-admins
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      if (!actor.branches?.map(b => b.id).includes(branchId)) {
+      if (!actor.branches?.map((b) => b.id).includes(branchId)) {
         throw new ForbiddenException(
           "You cannot create tickets for a branch you do not belong to.",
         );
@@ -195,7 +195,7 @@ export class RepairTicketsService {
 
     // Security check: Branch access isolation
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      where.branchId = { in: actor.branches?.map(b => b.id) || [] };
+      where.branchId = { in: actor.branches?.map((b) => b.id) || [] };
     } else if (query.branchId) {
       where.branchId = query.branchId;
     }
@@ -299,7 +299,7 @@ export class RepairTicketsService {
 
     // Security check: Branch access isolation
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      if (!actor.branches?.map(b => b.id).includes(ticket.branchId)) {
+      if (!actor.branches?.map((b) => b.id).includes(ticket.branchId)) {
         throw new ForbiddenException("Branch access isolation violation.");
       }
     }
@@ -571,7 +571,8 @@ export class RepairTicketsService {
           status: "DELIVERED",
           deliveredAt: new Date(),
           deliveredById: actor.id,
-          deliveryNotes: (dto as any).publicNote || "Device delivered to customer.",
+          deliveryNotes:
+            (dto as any).publicNote || "Device delivered to customer.",
         },
       });
 
@@ -581,7 +582,8 @@ export class RepairTicketsService {
           repairTicketId: ticketId,
           previousStatus: ticket.status as any,
           newStatus: "DELIVERED",
-          publicNote: (dto as any).publicNote || "Device delivered to customer.",
+          publicNote:
+            (dto as any).publicNote || "Device delivered to customer.",
           internalNote: "Handover completed and delivery confirmed.",
           changedById: actor.id,
         },

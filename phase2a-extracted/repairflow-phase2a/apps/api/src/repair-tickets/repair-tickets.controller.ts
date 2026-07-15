@@ -29,7 +29,6 @@ import {
   ApiOkNullableDataResponse,
   ApiPaginatedDataResponse,
   ApiValidationErrorDto,
-  ApiStandardErrors,
 } from "../common/dto/api-response.dto";
 import { CreateRepairTicketDto } from "./dto/create-repair-ticket.dto";
 import { FindRepairTicketsQueryDto } from "./dto/find-repair-tickets-query.dto";
@@ -45,7 +44,6 @@ import { DiagnosisResponseDto } from "./dto/diagnosis-response.dto";
 
 @ApiTags("Repair Tickets")
 @ApiBearerAuth()
-@ApiStandardErrors()
 @UseGuards(JwtAuthGuard, RolesGuard, BranchAccessGuard)
 @Controller("tickets")
 export class RepairTicketsController {
@@ -98,7 +96,11 @@ export class RepairTicketsController {
     @Body() body: AssignTechnicianDto,
     @CurrentUser() actor: AuthenticatedUser,
   ) {
-    const ticket = await this.ticketsService.assignTechnician(id, body, actor);
+    const ticket = await this.ticketsService.assignTechnician(
+      id,
+      body.technicianId,
+      actor,
+    );
     return { success: true as const, data: ticket };
   }
 
@@ -113,7 +115,11 @@ export class RepairTicketsController {
     @Body() body: AssignTechnicianDto,
     @CurrentUser() actor: AuthenticatedUser,
   ) {
-    const ticket = await this.ticketsService.assignTechnician(id, body, actor);
+    const ticket = await this.ticketsService.assignTechnician(
+      id,
+      body.technicianId,
+      actor,
+    );
     return { success: true as const, data: ticket };
   }
 
@@ -144,7 +150,7 @@ export class RepairTicketsController {
   }
 
   @Post(":id/diagnosis")
-  @Roles("SYSTEM_ADMIN", "TECHNICIAN")
+  @Roles("SYSTEM_ADMIN", "OWNER", "BRANCH_MANAGER", "TECHNICIAN")
   @ApiOperation({ summary: "Add or update diagnostic findings" })
   @ApiParam({ name: "id", format: "uuid" })
   @ApiOkDataResponse(DiagnosisResponseDto)

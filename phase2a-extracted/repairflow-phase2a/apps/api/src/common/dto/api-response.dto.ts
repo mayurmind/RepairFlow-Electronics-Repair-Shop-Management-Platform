@@ -6,10 +6,6 @@ import {
   ApiProperty,
   ApiPropertyOptional,
   getSchemaPath,
-  ApiUnauthorizedResponse,
-  ApiForbiddenResponse,
-  ApiNotFoundResponse,
-  ApiConflictResponse,
 } from "@nestjs/swagger";
 
 export class PaginationMetaDto {
@@ -41,10 +37,7 @@ export class ValidationErrorDetailDto {
   @ApiProperty({ example: "phone" })
   field!: string;
 
-  @ApiProperty({
-    type: [String],
-    example: ["phone must be a valid phone number"],
-  })
+  @ApiProperty({ type: [String], example: ["phone must be a valid phone number"] })
   constraints!: string[];
 }
 
@@ -131,24 +124,4 @@ export const ApiCreatedDataResponse = (model: Type<unknown>) =>
   applyDecorators(
     ApiExtraModels(ApiSuccessResponseDto, model),
     ApiCreatedResponse({ schema: responseSchema(model) }),
-  );
-
-export const ApiStandardErrors = () =>
-  applyDecorators(
-    ApiUnauthorizedResponse({
-      type: ApiValidationErrorDto,
-      description: "Authentication required",
-    }),
-    ApiForbiddenResponse({
-      type: ApiValidationErrorDto,
-      description: "Insufficient permissions or wrong branch",
-    }),
-    ApiNotFoundResponse({
-      type: ApiValidationErrorDto,
-      description: "Resource not found",
-    }),
-    ApiConflictResponse({
-      type: ApiValidationErrorDto,
-      description: "Business rule violation or state conflict",
-    }),
   );

@@ -12,7 +12,7 @@ export class ReportsService {
 
     // Branch isolation for non-admins
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      const assignedBranchIds = actor.branches?.map(b => b.id) || [];
+      const assignedBranchIds = actor.branches?.map((b) => b.id) || [];
       where.branchId = { in: assignedBranchIds };
     } else if (branchId) {
       where.branchId = branchId;
@@ -85,7 +85,7 @@ export class ReportsService {
       };
 
       if (actor.role === "BRANCH_MANAGER") {
-        const assignedBranchIds = actor.branches?.map(b => b.id) || [];
+        const assignedBranchIds = actor.branches?.map((b) => b.id) || [];
         revenueWhere.repairTicket = { branchId: { in: assignedBranchIds } };
       } else if (branchId) {
         revenueWhere.repairTicket = { branchId };
@@ -111,7 +111,7 @@ export class ReportsService {
     if (actor.role !== "TECHNICIAN") {
       const branchIdsFilter =
         actor.role === "BRANCH_MANAGER"
-          ? actor.branches?.map(b => b.id) || []
+          ? actor.branches?.map((b) => b.id) || []
           : branchId
             ? [branchId]
             : [];
@@ -192,7 +192,7 @@ export class ReportsService {
     };
 
     if (actor.role === "BRANCH_MANAGER") {
-      const assignedBranchIds = actor.branches?.map(b => b.id) || [];
+      const assignedBranchIds = actor.branches?.map((b) => b.id) || [];
       where.invoice = {
         repairTicket: { branchId: { in: assignedBranchIds } },
       };
