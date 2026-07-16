@@ -140,25 +140,33 @@ describe("Customer Branch Creation Contract (e2e)", () => {
       where: { actorUserId },
     });
     await prisma.auditLog.deleteMany({
-      where: { branchId: { in: [authorizedBranchId, foreignBranchId, inactiveBranchId] } },
+      where: {
+        branchId: {
+          in: [authorizedBranchId, foreignBranchId, inactiveBranchId],
+        },
+      },
     });
     await prisma.customer.deleteMany({
-      where: { branchId: { in: [authorizedBranchId, foreignBranchId, inactiveBranchId] } },
+      where: {
+        branchId: {
+          in: [authorizedBranchId, foreignBranchId, inactiveBranchId],
+        },
+      },
     });
     await prisma.branch.deleteMany({
-      where: { id: { in: [authorizedBranchId, foreignBranchId, inactiveBranchId] } },
+      where: {
+        id: { in: [authorizedBranchId, foreignBranchId, inactiveBranchId] },
+      },
     });
     await prisma.user.deleteMany({ where: { id: actorUserId } });
     await app.close();
   });
 
   it("rejects POST /customers when branchId is missing → 400", async () => {
-    const res = await request(app.getHttpServer())
-      .post("/customers")
-      .send({
-        fullName: "Missing Branch Customer",
-        phone: "+10000000001",
-      });
+    const res = await request(app.getHttpServer()).post("/customers").send({
+      fullName: "Missing Branch Customer",
+      phone: "+10000000001",
+    });
 
     expect(res.status).toBe(400);
     expect(res.body.code).toBe("VALIDATION_ERROR");
@@ -167,26 +175,22 @@ describe("Customer Branch Creation Contract (e2e)", () => {
   });
 
   it("rejects POST /customers when branchId is a malformed UUID → 400", async () => {
-    const res = await request(app.getHttpServer())
-      .post("/customers")
-      .send({
-        branchId: "not-a-uuid",
-        fullName: "Malformed UUID Customer",
-        phone: "+10000000002",
-      });
+    const res = await request(app.getHttpServer()).post("/customers").send({
+      branchId: "not-a-uuid",
+      fullName: "Malformed UUID Customer",
+      phone: "+10000000002",
+    });
 
     expect(res.status).toBe(400);
   });
 
   it("rejects POST /customers when branchId belongs to a foreign branch → 403", async () => {
     // Actor only has access to authorizedBranchId, not foreignBranchId.
-    const res = await request(app.getHttpServer())
-      .post("/customers")
-      .send({
-        branchId: foreignBranchId,
-        fullName: "Foreign Branch Customer",
-        phone: "+10000000003",
-      });
+    const res = await request(app.getHttpServer()).post("/customers").send({
+      branchId: foreignBranchId,
+      fullName: "Foreign Branch Customer",
+      phone: "+10000000003",
+    });
 
     expect(res.status).toBe(403);
     expect(res.body.message).toMatch(/access/i);
@@ -196,13 +200,11 @@ describe("Customer Branch Creation Contract (e2e)", () => {
     // Give actor access to the inactive branch so the guard passes.
     currentActorBranches = [{ id: inactiveBranchId }];
 
-    const res = await request(app.getHttpServer())
-      .post("/customers")
-      .send({
-        branchId: inactiveBranchId,
-        fullName: "Inactive Branch Customer",
-        phone: "+10000000004",
-      });
+    const res = await request(app.getHttpServer()).post("/customers").send({
+      branchId: inactiveBranchId,
+      fullName: "Inactive Branch Customer",
+      phone: "+10000000004",
+    });
 
     expect(res.status).toBe(400);
     expect(res.body.message).toMatch(/inactive/i);
