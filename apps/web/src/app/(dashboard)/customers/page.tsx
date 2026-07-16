@@ -7,6 +7,9 @@ import { useAuth } from "@/providers/auth-provider";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createCustomerSchema } from "@repairflow/validation";
+
+// branchId is an application-context field — derived from activeBranchId, not entered by the user.
+const customerFormSchema = createCustomerSchema.omit({ branchId: true });
 import {
   Search,
   Plus,
@@ -59,9 +62,8 @@ export default function CustomersPage() {
 
   // Forms
   const createForm = useForm({
-    resolver: zodResolver(createCustomerSchema),
+    resolver: zodResolver(customerFormSchema),
     defaultValues: {
-      branchId: "",
       fullName: "",
       phone: "",
       alternatePhone: "",
@@ -73,7 +75,15 @@ export default function CustomersPage() {
 
   // Mutations
   const createCustomerMutation = useMutation({
-    mutationFn: (data: any) => apiClient.post("/customers", data),
+    mutationFn: (data: any) => {
+      if (!activeBranchId) {
+        throw new Error("Please select an active branch before registering a customer.");
+      }
+      return apiClient.post("/customers", {
+        ...data,
+        branchId: activeBranchId,
+      });
+    },
     onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       toast.success("Customer registered successfully!");
@@ -123,10 +133,7 @@ export default function CustomersPage() {
           </p>
         </div>
         <button
-          onClick={() => {
-            createForm.setValue("branchId", activeBranchId || "");
-            setIsCreateOpen(true);
-          }}
+          onClick={() => setIsCreateOpen(true)}
           className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-slate-800 transition-colors shadow-sm"
         >
           <Plus className="w-4 h-4" /> Add Customer
@@ -470,8 +477,9 @@ export default function CustomersPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={createCustomerMutation.isPending}
+                  disabled={createCustomerMutation.isPending || !activeBranchId}
                   className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors disabled:opacity-50"
+                  title={!activeBranchId ? "Select an active branch first" : undefined}
                 >
                   {createCustomerMutation.isPending ? "Saving..." : "Register"}
                 </button>
