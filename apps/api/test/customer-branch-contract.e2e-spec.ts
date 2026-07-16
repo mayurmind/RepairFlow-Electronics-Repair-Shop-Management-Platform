@@ -135,6 +135,13 @@ describe("Customer Branch Creation Contract (e2e)", () => {
   });
 
   afterAll(async () => {
+    // AuditLog has FK to both User and Branch — must be cleared first.
+    await prisma.auditLog.deleteMany({
+      where: { actorUserId },
+    });
+    await prisma.auditLog.deleteMany({
+      where: { branchId: { in: [authorizedBranchId, foreignBranchId, inactiveBranchId] } },
+    });
     await prisma.customer.deleteMany({
       where: { branchId: { in: [authorizedBranchId, foreignBranchId, inactiveBranchId] } },
     });
