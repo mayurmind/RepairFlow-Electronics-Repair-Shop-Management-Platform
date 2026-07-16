@@ -1,13 +1,15 @@
-import { test, expect } from "@playwright/test";
+﻿import { test, expect } from "@playwright/test";
+import { loginAs } from "../utils/auth";
+import {
+  waitForApiResponse,
+  expectSuccessfulResponse,
+} from "../utils/api-assertions";
 
 test("Phase 2 core workflow E2E test", async ({ page }) => {
   page.on("console", (msg) => console.log("BROWSER LOG:", msg.text()));
+
   // --- 1. Login as Front Desk ---
-  await page.goto("/login");
-  await page.fill('input[type="email"]', "front.a@repairflow.com");
-  await page.fill('input[type="password"]', "password123");
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/.*dashboard/);
+  await loginAs(page, "front.a@repairflow.com");
 
   // --- 2. Create Customer ---
   await page.click("text=Customers");
@@ -28,20 +30,28 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
     'input[placeholder="Street details, city, postal code"]',
     "123 E2E Lane",
   );
-  await page.click('button[type="submit"]:has-text("Register")');
 
-  // Verify customer is in the list
-  const customerItem = page.locator(
-    `.flex-1.overflow-y-auto.divide-y button:has-text("${customerName}")`,
-  );
-  await expect(customerItem).toBeVisible();
+  // Register interceptor BEFORE clicking — avoids race conditions.
+  const customerResponsePromise = waitForApiResponse(page, "POST", "/customers");
+  await page.click('button[type="submit"]:has-text("Register")');
+  const customerResponse = await customerResponsePromise;
+
+  // Assert actual HTTP status — surfaces backend validation errors immediately.
+  await expectSuccessfulResponse(customerResponse, 201);
+
+  await expect(
+    page.getByText("Customer registered successfully!"),
+  ).toBeVisible();
+
+  await expect(
+    page.getByRole("button", { name: new RegExp(customerName) }),
+  ).toBeVisible();
 
   // --- 3. Register Device under Customer ---
   await page.click("text=Devices");
   await expect(page).toHaveURL(/.*devices/);
   await page.click("text=Register Device");
 
-  // Select the newly created customer
   await page.selectOption('select:has-text("Choose Customer")', {
     label: `${customerName} (${customerPhone})`,
   });
@@ -55,9 +65,11 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
     'input[placeholder="e.g. DX4F82..."]',
     `SN-E2E-${randSuffix}`,
   );
-  await page.click('button[type="submit"]:has-text("Register")');
 
-  // Verify device registered
+  const deviceResponsePromise = waitForApiResponse(page, "POST", "/devices");
+  await page.click('button[type="submit"]:has-text("Register")');
+  await expectSuccessfulResponse(await deviceResponsePromise, 201);
+
   await expect(page.locator(`text=SN: SN-E2E-${randSuffix}`)).toBeVisible();
 
   // --- 4. Create Repair Ticket ---
@@ -65,7 +77,6 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
   await expect(page).toHaveURL(/.*tickets/);
   await page.click("text=Create Ticket");
 
-  // Select customer and device
   await page.selectOption('select:has-text("Choose Customer")', {
     label: `${customerName} (${customerPhone})`,
   });
@@ -76,9 +87,11 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
     'textarea[placeholder="Describe issues in detail..."]',
     "Screen cracked and completely black",
   );
-  await page.click('button[type="submit"]:has-text("Create Ticket")');
 
-  // Wait for ticket creation and verify
+  const ticketResponsePromise = waitForApiResponse(page, "POST", "/repair-tickets");
+  await page.click('button[type="submit"]:has-text("Create Ticket")');
+  await expectSuccessfulResponse(await ticketResponsePromise, 201);
+
   await expect(
     page.locator(`.grid :has-text("${customerName}")`).first(),
   ).toBeVisible();
@@ -86,24 +99,22 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
   // --- 5. Logout Front Desk ---
   await page.click("button:has-text('Logout')");
   await expect(page).toHaveURL(/.*login/);
-  await page.waitForLoadState("networkidle");
 
   // --- 6. Login as Manager ---
-  await page.fill('input[type="email"]', "manager.a@repairflow.com");
-  await page.fill('input[type="password"]', "password123");
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/.*dashboard/);
+  await loginAs(page, "manager.a@repairflow.com");
 
-  // Navigate to tickets, select the ticket, and assign technician
   await page.click("text=Tickets");
   await expect(page).toHaveURL(/.*tickets/);
 
-  // Click on the created ticket row/card to open detail drawer
   await page.click(`text=${customerName}`);
   await page.click("text=Assign Staff");
 
   await page.selectOption("#technician-select", { label: "Ted Tech A1" });
+
+  const assignResponsePromise = waitForApiResponse(page, "POST", "/assign");
   await page.click("#confirm-assign-btn");
+  await expectSuccessfulResponse(await assignResponsePromise, 200);
+
   await expect(
     page.locator("text=Technician assigned successfully!"),
   ).toBeVisible();
@@ -111,18 +122,12 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
   // Logout Manager
   await page.click("button:has-text('Logout')");
   await expect(page).toHaveURL(/.*login/);
-  await page.waitForLoadState("networkidle");
 
   // --- 7. Login as Technician ---
-  await page.fill('input[type="email"]', "tech.a1@repairflow.com");
-  await page.fill('input[type="password"]', "password123");
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/.*tickets/); // Technicians are routed to tickets directly
+  await loginAs(page, "tech.a1@repairflow.com", "password123", /tickets/);
 
-  // Click on the assigned ticket
   await page.click(`text=${customerName}`);
 
-  // Start diagnosis (status update to DIAGNOSING)
   await page.click("#status-btn-DIAGNOSING");
   await page.fill(
     'input[placeholder="Explain status change to customer..."]',
@@ -132,12 +137,15 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
     'input[placeholder="Private internal log comments..."]',
     "Diagnosing board rails",
   );
+
+  const diagnosingResponsePromise = waitForApiResponse(page, "POST", "/status");
   await page.click('button:has-text("Confirm Change")');
+  await expectSuccessfulResponse(await diagnosingResponsePromise, 200);
+
   await expect(
     page.locator("text=Ticket status updated successfully!"),
   ).toBeVisible();
 
-  // Record diagnosis and transition to WAITING_FOR_APPROVAL
   await page.click("#status-btn-WAITING_FOR_APPROVAL");
   await page.fill(
     'input[placeholder="e.g. Screen Replacement, Battery Degradation"]',
@@ -154,12 +162,15 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
   await page.selectOption('select:has-text("Choose Feasibility")', {
     label: "Repairable",
   });
+
+  const diagnosisResponsePromise = waitForApiResponse(page, "POST", "/diagnosis");
   await page.click('button:has-text("Submit findings")');
+  await expectSuccessfulResponse(await diagnosisResponsePromise, 201);
+
   await expect(
     page.locator("text=Diagnosis recorded successfully!"),
   ).toBeVisible();
 
-  // Confirm timeline contains the updates
   await page.click("text=Timeline");
   await expect(page.locator(".relative.border-l")).toContainText("DIAGNOSING");
   await expect(page.locator(".relative.border-l")).toContainText(
