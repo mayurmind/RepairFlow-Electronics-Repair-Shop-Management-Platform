@@ -13,6 +13,13 @@ Phase 2 establishes the core operational pipeline of RepairFlow. It introduces d
 
 ### Application Level
 - **Intake Consistency**: `RepairTicketsService.create()` validates that the given `customerId` and `deviceId` explicitly belong to the ticket's target `branchId`.
+- **branchId Customer Contract**: `POST /customers` requires `branchId`. The frontend derives it from the authenticated user's `activeBranchId` context and injects it at submission time \u2014 it is never a user-editable form field. The form schema omits `branchId` and the mutation injects it:
+  ```typescript
+  const customerFormSchema = createCustomerSchema.omit({ branchId: true });
+  // In mutationFn:
+  return apiClient.post("/customers", { ...formData, branchId: activeBranchId });
+  ```
+  The Register button is disabled when no active branch is selected. The backend independently verifies that the branch exists, is active, and is authorized for the actor.
 - **Duplicate Handling**: `CustomersService` and `DevicesService` wrap writes in a transaction and trap Prisma `P2002` (Unique Constraint Violation) errors. They safely translate these into `409 Conflict` exceptions without revealing data from other branches.
 - **Scoped Histories**: Endpoints fetching a customer or device's repair history enforce `branchId` directly within the `findMany` Prisma query to guarantee zero leakage.
 
