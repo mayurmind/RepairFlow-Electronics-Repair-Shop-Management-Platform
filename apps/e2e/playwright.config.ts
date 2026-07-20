@@ -19,4 +19,19 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
+  webServer: [
+    {
+      command:
+        "cd ../../ && pnpm build:packages && pnpm --filter api dev",
+      url: "http://localhost:4000/api/v1/health",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+    {
+      command: "cd ../../ && pnpm --filter web start",
+      url: "http://localhost:3000",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+  ],
 });
