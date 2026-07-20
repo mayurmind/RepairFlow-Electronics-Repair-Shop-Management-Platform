@@ -152,6 +152,26 @@ jobs:
           NODE_ENV: production
         run: pnpm build:apps
 
+      - name: Start API and Web
+        run: |
+          pnpm --filter api start:prod > api.log 2>&1 &
+          pnpm --filter web start > web.log 2>&1 &
+
+      - name: Wait for API to be ready
+        run: |
+          echo "Waiting for API to start..."
+          for i in {1..30}; do
+            if curl --fail --silent http://localhost:4000/api/v1/health; then
+              echo "API is ready!"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API failed to become ready after 60 seconds."
+          echo "=== API Logs ==="
+          cat api.log || echo "No API logs found."
+          exit 1
+
       - name: Install Playwright Chromium
         run: pnpm --filter e2e exec playwright install --with-deps chromium
 
