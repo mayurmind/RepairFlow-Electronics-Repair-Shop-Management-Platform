@@ -18,6 +18,7 @@ async function validateDto<T extends object>(
 describe("Phase 2A core workflow DTOs", () => {
   it("accepts a valid customer", async () => {
     const errors = await validateDto(CreateCustomerDto, {
+      branchId: "550e8400-e29b-41d4-a716-446655440002",
       fullName: "Aarav Sharma",
       phone: "+919876543210",
       email: "aarav@example.com",
@@ -27,6 +28,7 @@ describe("Phase 2A core workflow DTOs", () => {
 
   it("rejects an invalid customer phone", async () => {
     const errors = await validateDto(CreateCustomerDto, {
+      branchId: "550e8400-e29b-41d4-a716-446655440002",
       fullName: "Aarav Sharma",
       phone: "abc",
     });
@@ -35,6 +37,7 @@ describe("Phase 2A core workflow DTOs", () => {
 
   it("rejects an invalid customer email", async () => {
     const errors = await validateDto(CreateCustomerDto, {
+      branchId: "550e8400-e29b-41d4-a716-446655440002",
       fullName: "Aarav Sharma",
       phone: "+919876543210",
       email: "not-an-email",
@@ -44,6 +47,7 @@ describe("Phase 2A core workflow DTOs", () => {
 
   it("rejects unknown request properties", async () => {
     const errors = await validateDto(CreateCustomerDto, {
+      branchId: "550e8400-e29b-41d4-a716-446655440002",
       fullName: "Aarav Sharma",
       phone: "+919876543210",
       admin: true,
@@ -73,6 +77,7 @@ describe("Phase 2A core workflow DTOs", () => {
 
   it("rejects an invalid IMEI", async () => {
     const errors = await validateDto(CreateDeviceDto, {
+      branchId: "550e8400-e29b-41d4-a716-446655440002",
       category: "Smartphone",
       brand: "Samsung",
       model: "Galaxy S24",

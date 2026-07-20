@@ -10,6 +10,8 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
   },
   projects: [
     {
@@ -20,7 +22,7 @@ export default defineConfig({
   webServer: [
     {
       command:
-        "cd ../../ && pnpm build:packages && npx turbo run dev --filter=api",
+        "cd ../../ && pnpm build:packages && pnpm --filter api dev",
       url: "http://localhost:4000/api/v1/health",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,

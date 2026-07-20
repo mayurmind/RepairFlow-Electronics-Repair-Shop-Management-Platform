@@ -92,10 +92,11 @@ export default function LoginPage() {
         {/* Login Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
+            <label htmlFor="email" className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
               Email Address
             </label>
             <input
+              id="email"
               type="email"
               placeholder="e.g. tech.a1@repairflow.com"
               {...register("email")}
@@ -111,7 +112,7 @@ export default function LoginPage() {
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
+              <label htmlFor="password" className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 Password
               </label>
               <Link
@@ -122,6 +123,7 @@ export default function LoginPage() {
               </Link>
             </div>
             <input
+              id="password"
               type="password"
               placeholder="••••••••"
               {...register("password")}

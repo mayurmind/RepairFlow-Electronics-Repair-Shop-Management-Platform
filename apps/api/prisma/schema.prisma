@@ -111,9 +111,15 @@ model Branch {
   isActive     Boolean      @default(true)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
-  userBranches UserBranch[]
-  tickets      RepairTicket[]
-  auditLogs    AuditLog[]
+  userBranches            UserBranch[]
+  tickets                RepairTicket[]
+  auditLogs              AuditLog[]
+  customers              Customer[]
+  devices                Device[]
+  suppliers              Supplier[]
+  branchInventories      BranchInventory[]
+  stockMovements         StockMovement[]
+  branchSequenceCounters BranchSequenceCounter[]
 }
 
 model User {
@@ -145,6 +151,9 @@ model User {
   notifications       Notification[]
   technicianAssignments TechnicianAssignmentHistory[] @relation("TechnicianAssignment")
   createdAssignments    TechnicianAssignmentHistory[] @relation("AssignmentCreator")
+  partsCreated              Part[]          @relation("PartCreator")
+  suppliersCreated          Supplier[]      @relation("SupplierCreator")
+  stockMovementsPerformed   StockMovement[] @relation("StockMovementActor")
 }
 
 model UserBranch {
@@ -182,6 +191,7 @@ model PasswordResetToken {
 
 model Customer {
   id             String         @id @default(uuid())
+  branchId       String
   fullName       String
   phone          String
   alternatePhone String?
@@ -191,16 +201,20 @@ model Customer {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   deletedAt      DateTime?
+  branch         Branch         @relation(fields: [branchId], references: [id])
   devices        Device[]
   tickets        RepairTicket[]
 
+  @@unique([id, branchId])
+  @@unique([branchId, phone])
+  @@unique([branchId, email])
+  @@index([branchId])
   @@index([fullName])
-  @@index([phone])
-  @@index([email])
 }
 
 model Device {
   id           String         @id @default(uuid())
+  branchId     String
   customerId   String
   category     String
   brand        String
@@ -212,12 +226,15 @@ model Device {
   notes        String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  customer     Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer     Customer       @relation(fields: [customerId, branchId], references: [id, branchId], onDelete: Cascade)
+  branch       Branch         @relation(fields: [branchId], references: [id])
   tickets      RepairTicket[]
 
+  @@unique([branchId, serialNumber])
+  @@unique([branchId, imeiNumber])
+  @@index([branchId])
+  @@index([branchId, customerId])
   @@index([customerId])
-  @@index([serialNumber])
-  @@index([imeiNumber])
   @@index([brand, model])
 }
 
@@ -472,3 +489,142 @@ model SequenceCounter {
   name  String @id
   value Int    @default(0)
 }
+
+// ── Phase 3: Inventory & Supplier Enums ──────────────────────────
+
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum StockMovementType {
+  OPENING_BALANCE
+  PURCHASE_RECEIPT
+  MANUAL_INCREASE
+  MANUAL_DECREASE
+  RESERVATION
+  RESERVATION_RELEASE
+  TICKET_CONSUMPTION
+  TICKET_RETURN
+  TRANSFER_IN
+  TRANSFER_OUT
+  CORRECTION
+}
+
+enum BranchSequenceType {
+  PART_REQUEST
+  PURCHASE_ORDER
+}
+
+// ── Phase 3: Inventory Models ────────────────────────────────────
+
+model Part {
+  id                     String   @id @default(uuid())
+  sku                    String   @unique
+  skuNormalized          String   @unique
+  name                   String
+  description            String?
+  manufacturer           String?
+  manufacturerPartNumber String?
+  unit                   String   @default("PIECE")
+  isActive               Boolean  @default(true)
+  createdById            String
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  createdBy         User              @relation("PartCreator", fields: [createdById], references: [id])
+  branchInventories BranchInventory[]
+  stockMovements    StockMovement[]
+
+  @@index([skuNormalized])
+  @@index([name])
+  @@index([isActive])
+}
+
+model Supplier {
+  id             String         @id @default(uuid())
+  branchId       String
+  supplierCode   String
+  name           String
+  nameNormalized String
+  contactName    String?
+  email          String?
+  phone          String?
+  address        String?
+  taxIdentifier  String?
+  status         SupplierStatus @default(ACTIVE)
+  createdById    String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  branch    Branch @relation(fields: [branchId], references: [id])
+  createdBy User   @relation("SupplierCreator", fields: [createdById], references: [id])
+
+  @@unique([branchId, supplierCode])
+  @@unique([branchId, nameNormalized])
+  @@index([branchId])
+  @@index([status])
+}
+
+model BranchInventory {
+  id               String   @id @default(uuid())
+  branchId         String
+  partId           String
+  onHandQuantity   Int      @default(0)
+  reservedQuantity Int      @default(0)
+  reorderLevel     Int      @default(0)
+  locationLabel    String?
+  version          Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  branch         Branch          @relation(fields: [branchId], references: [id])
+  part           Part            @relation(fields: [partId], references: [id])
+  stockMovements StockMovement[]
+
+  @@unique([branchId, partId])
+  @@index([branchId])
+  @@index([partId])
+}
+
+model StockMovement {
+  id                String            @id @default(uuid())
+  branchId          String
+  branchInventoryId String
+  partId            String
+  movementType      StockMovementType
+  onHandDelta       Int
+  reservedDelta     Int               @default(0)
+  onHandBefore      Int
+  onHandAfter       Int
+  reservedBefore    Int
+  reservedAfter     Int
+  sourceEntityType  String?
+  sourceEntityId    String?
+  reason            String?
+  actorUserId       String
+  createdAt         DateTime          @default(now())
+
+  branch          Branch          @relation(fields: [branchId], references: [id])
+  branchInventory BranchInventory @relation(fields: [branchInventoryId], references: [id])
+  part            Part            @relation(fields: [partId], references: [id])
+  actor           User            @relation("StockMovementActor", fields: [actorUserId], references: [id])
+
+  @@index([branchInventoryId])
+  @@index([branchId])
+  @@index([partId])
+  @@index([movementType])
+  @@index([createdAt])
+}
+
+model BranchSequenceCounter {
+  branchId     String
+  sequenceType BranchSequenceType
+  value        Int                @default(0)
+  updatedAt    DateTime           @updatedAt
+
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@id([branchId, sequenceType])
+}
+

@@ -216,3 +216,102 @@ export interface ApiResponse<T> {
   };
   requestId?: string;
 }
+
+// ── Phase 3: Inventory & Supplier Enums ──────────────────────────
+
+// Supplier Status
+export const SUPPLIER_STATUSES = ["ACTIVE", "INACTIVE"] as const;
+export type SupplierStatus = (typeof SUPPLIER_STATUSES)[number];
+
+// Stock Movement Type
+export const STOCK_MOVEMENT_TYPES = [
+  "OPENING_BALANCE",
+  "PURCHASE_RECEIPT",
+  "MANUAL_INCREASE",
+  "MANUAL_DECREASE",
+  "RESERVATION",
+  "RESERVATION_RELEASE",
+  "TICKET_CONSUMPTION",
+  "TICKET_RETURN",
+  "TRANSFER_IN",
+  "TRANSFER_OUT",
+  "CORRECTION",
+] as const;
+export type StockMovementType = (typeof STOCK_MOVEMENT_TYPES)[number];
+
+// Inventory Adjustment Direction
+export const INVENTORY_ADJUSTMENT_DIRECTIONS = [
+  "INCREASE",
+  "DECREASE",
+] as const;
+export type InventoryAdjustmentDirection =
+  (typeof INVENTORY_ADJUSTMENT_DIRECTIONS)[number];
+
+// Branch Sequence Type
+export const BRANCH_SEQUENCE_TYPES = [
+  "PART_REQUEST",
+  "PURCHASE_ORDER",
+] as const;
+export type BranchSequenceType = (typeof BRANCH_SEQUENCE_TYPES)[number];
+
+// ── Phase 3: Inventory & Supplier Interfaces ─────────────────────
+
+export interface Part {
+  id: string;
+  sku: string;
+  name: string;
+  description?: string;
+  manufacturer?: string;
+  manufacturerPartNumber?: string;
+  unit: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Supplier {
+  id: string;
+  branchId: string;
+  supplierCode: string;
+  name: string;
+  contactName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  taxIdentifier?: string;
+  status: SupplierStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BranchInventory {
+  id: string;
+  branchId: string;
+  partId: string;
+  onHandQuantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  reorderLevel: number;
+  locationLabel?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StockMovement {
+  id: string;
+  branchId: string;
+  branchInventoryId: string;
+  partId: string;
+  movementType: StockMovementType;
+  onHandDelta: number;
+  reservedDelta: number;
+  onHandBefore: number;
+  onHandAfter: number;
+  reservedBefore: number;
+  reservedAfter: number;
+  sourceEntityType?: string;
+  sourceEntityId?: string;
+  reason?: string;
+  actorUserId: string;
+  createdAt: string;
+}

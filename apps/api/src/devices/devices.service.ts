@@ -3,10 +3,11 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  ConflictException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
-import { createDeviceSchema } from "@repairflow/validation";
+import { createDeviceSchema, updateDeviceSchema } from "@repairflow/validation";
 import { AuthenticatedUser } from "../auth/types/authenticated-user.type";
 import { CreateDeviceDto } from "./dto/create-device.dto";
 import { UpdateDeviceDto } from "./dto/update-device.dto";
@@ -20,48 +21,22 @@ export class DevicesService {
     private auditLogs: AuditLogsService,
   ) {}
 
-  async checkCustomerAccess(customerId: string, actor: AuthenticatedUser) {
-    const customer = await this.prisma.customer.findFirst({
-      where: { id: customerId, deletedAt: null },
-    });
-    if (!customer || customer.deletedAt !== null) {
-      throw new NotFoundException("Customer profile not found");
-    }
-
-    // Branch isolation check
-    if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
-      const hasTickets = await this.prisma.repairTicket.count({
-        where: { customerId },
-      });
-
-      if (hasTickets > 0) {
-        const accessibleTicket = await this.prisma.repairTicket.findFirst({
-          where: {
-            customerId,
-            branchId: {
-              in: actor.branches?.map((branch) => branch.id) ?? [],
-            },
-          },
-          select: { id: true },
-        });
-
-        if (!accessibleTicket) {
-          throw new ForbiddenException(
-            "You do not have access to this customer.",
-          );
-        }
-      }
-    }
-    return customer;
-  }
-
   async create(
     customerId: string,
     dto: CreateDeviceDto,
     actor: AuthenticatedUser,
   ) {
     // Load & verify customer access
-    await this.checkCustomerAccess(customerId, actor);
+    const customerWhere: any = { id: customerId, deletedAt: null };
+    if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
+      customerWhere.branchId = { in: actor.branches?.map((b) => b.id) || [] };
+    }
+    const customer = await this.prisma.customer.findFirst({
+      where: customerWhere,
+    });
+    if (!customer) {
+      throw new NotFoundException("Customer profile not found");
+    }
 
     // Parse with zod for service safety & test compatibility
     const parsed = createDeviceSchema.safeParse(dto);
@@ -84,34 +59,54 @@ export class DevicesService {
       notes,
     } = parsed.data;
 
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const device = await tx.device.create({
-        data: {
-          customerId,
-          category,
-          brand,
-          model,
-          serialNumber: serialNumber || null,
-          imeiNumber: imeiNumber || null,
-          colour: colour || null,
-          variant: variant || null,
-          notes: notes || null,
+    try {
+      return await this.prisma.$transaction(
+        async (tx: Prisma.TransactionClient) => {
+          const device = await tx.device.create({
+            data: {
+              branchId: customer.branchId,
+              customerId,
+              category,
+              brand,
+              model,
+              serialNumber: serialNumber || null,
+              imeiNumber: imeiNumber || null,
+              colour: colour || null,
+              variant: variant || null,
+              notes: notes || null,
+            },
+          });
+
+          await this.auditLogs.createLog(
+            tx,
+            actor.id,
+            customer.branchId,
+            "REGISTER_DEVICE",
+            "Device",
+            device.id,
+            null,
+            device,
+          );
+
+          return device;
         },
-      });
-
-      await this.auditLogs.createLog(
-        tx,
-        actor.id,
-        null,
-        "REGISTER_DEVICE",
-        "Device",
-        device.id,
-        null,
-        device,
       );
-
-      return device;
-    });
+    } catch (error: any) {
+      if (error.code === "P2002") {
+        const target = error.meta?.target as string[];
+        if (target?.includes("serialNumber")) {
+          throw new ConflictException(
+            "Device serial number already exists in this branch",
+          );
+        }
+        if (target?.includes("imeiNumber")) {
+          throw new ConflictException(
+            "Device IMEI already exists in this branch",
+          );
+        }
+      }
+      throw error;
+    }
   }
 
   async findAll(query: FindDevicesQueryDto, actor: AuthenticatedUser) {
@@ -126,21 +121,10 @@ export class DevicesService {
       where.customerId = query.customerId;
     }
 
-    // Branch isolation: limit devices to those owned by accessible customers
+    // Branch isolation: limit devices to those owned by accessible branches
     if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
       andClauses.push({
-        customer: {
-          OR: [
-            { tickets: { none: {} } },
-            {
-              tickets: {
-                some: {
-                  branchId: { in: actor.branches?.map((b) => b.id) || [] },
-                },
-              },
-            },
-          ],
-        },
+        branchId: { in: actor.branches?.map((b) => b.id) || [] },
       });
     }
 
@@ -189,8 +173,13 @@ export class DevicesService {
   }
 
   async findOne(id: string, actor: AuthenticatedUser) {
-    const device = await this.prisma.device.findUnique({
-      where: { id },
+    const where: any = { id };
+    if (actor.role !== "SYSTEM_ADMIN" && actor.role !== "OWNER") {
+      where.branchId = { in: actor.branches?.map((b) => b.id) || [] };
+    }
+
+    const device = await this.prisma.device.findFirst({
+      where,
       include: {
         customer: {
           select: { id: true, fullName: true, phone: true, email: true },
@@ -200,40 +189,64 @@ export class DevicesService {
     if (!device) {
       throw new NotFoundException("Device not found");
     }
-    await this.checkCustomerAccess(device.customerId, actor);
     return device;
   }
 
   async update(id: string, dto: UpdateDeviceDto, actor: AuthenticatedUser) {
+    const parsed = updateDeviceSchema.safeParse(dto);
+    if (!parsed.success) {
+      throw new BadRequestException({
+        code: "VALIDATION_ERROR",
+        message: "Invalid device parameters.",
+        details: parsed.error.issues,
+      });
+    }
+
     const device = await this.findOne(id, actor);
 
-    // Load & verify customer access
-    await this.checkCustomerAccess(device.customerId, actor);
+    try {
+      return await this.prisma.$transaction(
+        async (tx: Prisma.TransactionClient) => {
+          const updated = await tx.device.update({
+            where: { id },
+            data: parsed.data as any,
+          });
 
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const updated = await tx.device.update({
-        where: { id },
-        data: dto as any,
-      });
-
-      await this.auditLogs.createLog(
-        tx,
-        actor.id,
-        null,
-        "UPDATE_DEVICE",
-        "Device",
-        id,
-        device,
-        updated,
+          await this.auditLogs.createLog(
+            tx,
+            actor.id,
+            device.branchId,
+            "UPDATE_DEVICE",
+            "Device",
+            id,
+            device,
+            updated,
+          );
+          return updated;
+        },
       );
-      return updated;
-    });
+    } catch (error: any) {
+      if (error.code === "P2002") {
+        const target = error.meta?.target as string[];
+        if (target?.includes("serialNumber")) {
+          throw new ConflictException(
+            "Device serial number already exists in this branch",
+          );
+        }
+        if (target?.includes("imeiNumber")) {
+          throw new ConflictException(
+            "Device IMEI already exists in this branch",
+          );
+        }
+      }
+      throw error;
+    }
   }
 
   async getRepairHistory(deviceId: string, actor: AuthenticatedUser) {
-    await this.findOne(deviceId, actor);
+    const device = await this.findOne(deviceId, actor);
     return this.prisma.repairTicket.findMany({
-      where: { deviceId },
+      where: { deviceId, branchId: device.branchId },
       orderBy: { createdAt: "desc" },
       include: {
         branch: { select: { name: true, code: true } },

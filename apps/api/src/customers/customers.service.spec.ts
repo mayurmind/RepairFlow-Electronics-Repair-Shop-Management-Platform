@@ -3,13 +3,20 @@ import { CustomersService } from "./customers.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditLogsService } from "../audit-logs/audit-logs.service";
 import type { Prisma } from "@prisma/client";
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  NotFoundException,
+  ConflictException,
+} from "@nestjs/common";
 
 describe("CustomersService", () => {
   let service: CustomersService;
   let prisma: PrismaService;
 
   const mockPrismaService: any = {
+    branch: {
+      findUnique: jest.fn(),
+    },
     customer: {
       findFirst: jest.fn(),
       findMany: jest.fn(),
@@ -48,6 +55,10 @@ describe("CustomersService", () => {
 
     service = module.get<CustomersService>(CustomersService);
     prisma = module.get<PrismaService>(PrismaService);
+    mockPrismaService.branch.findUnique.mockResolvedValue({
+      id: "11111111-1111-1111-1111-111111111111",
+      isActive: true,
+    });
     jest.clearAllMocks();
     mockPrismaService.repairTicket.findMany.mockResolvedValue([]);
     mockPrismaService.repairTicket.count.mockResolvedValue(0);
@@ -69,38 +80,45 @@ describe("CustomersService", () => {
     it("should create a customer successfully", async () => {
       mockPrismaService.customer.findFirst.mockResolvedValue(null);
       mockPrismaService.customer.create.mockResolvedValue({
-        id: "cust-1",
+        id: "22222222-2222-2222-2222-222222222222",
         fullName: "John Doe",
-        phone: "+1234567890",
+        phone: "+15551234567",
+        branchId: "11111111-1111-1111-1111-111111111111",
       });
 
       const dto = {
+        branchId: "11111111-1111-1111-1111-111111111111",
         fullName: "John Doe",
-        phone: "+1234567890",
+        phone: "+15551234567",
         email: "john@example.com",
       };
 
       const result = await service.create(dto, mockActor);
       expect(result).toBeDefined();
-      expect(result.id).toBe("cust-1");
+      expect(result.id).toBe("22222222-2222-2222-2222-222222222222");
       expect(mockPrismaService.customer.create).toHaveBeenCalled();
     });
 
     it("should fail if phone is already registered", async () => {
-      mockPrismaService.customer.findFirst.mockResolvedValue({ id: "cust-1" });
+      mockPrismaService.customer.create.mockRejectedValue({
+        code: "P2002",
+        meta: { target: ["phone"] },
+      });
 
       const dto = {
+        branchId: "11111111-1111-1111-1111-111111111111",
         fullName: "John Doe",
         phone: "+1234567890",
       };
 
       await expect(service.create(dto, mockActor)).rejects.toThrow(
-        BadRequestException,
+        ConflictException,
       );
     });
 
     it("should fail if phone is less than 5 characters", async () => {
       const dto = {
+        branchId: "11111111-1111-1111-1111-111111111111",
         fullName: "John Doe",
         phone: "123",
       };
@@ -112,6 +130,7 @@ describe("CustomersService", () => {
 
     it("should fail if email is invalid format", async () => {
       const dto = {
+        branchId: "11111111-1111-1111-1111-111111111111",
         fullName: "John Doe",
         phone: "+1234567890",
         email: "invalid-email",
