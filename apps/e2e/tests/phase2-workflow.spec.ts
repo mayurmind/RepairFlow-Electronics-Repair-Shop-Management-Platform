@@ -1,4 +1,4 @@
-﻿import { test, expect } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { loginAs } from "../utils/auth";
 import {
   waitForApiResponse,
@@ -113,7 +113,7 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
 
   const assignResponsePromise = waitForApiResponse(page, "POST", "/assign");
   await page.click("#confirm-assign-btn");
-  await expectSuccessfulResponse(await assignResponsePromise, 200);
+  await expectSuccessfulResponse(await assignResponsePromise, 201);
 
   await expect(
     page.locator("text=Technician assigned successfully!"),
@@ -140,7 +140,7 @@ test("Phase 2 core workflow E2E test", async ({ page }) => {
 
   const diagnosingResponsePromise = waitForApiResponse(page, "POST", "/status");
   await page.click('button:has-text("Confirm Change")');
-  await expectSuccessfulResponse(await diagnosingResponsePromise, 200);
+  await expectSuccessfulResponse(await diagnosingResponsePromise, 201);
 
   await expect(
     page.locator("text=Ticket status updated successfully!"),
