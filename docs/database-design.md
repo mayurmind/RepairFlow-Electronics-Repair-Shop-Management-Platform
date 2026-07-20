@@ -27,6 +27,11 @@ erDiagram
     Invoice ||--o{ PaymentRecord : tracks
     RepairTicket ||--o{ Attachment : contains
     User ||--o{ AuditLog : creates
+    Branch ||--o{ Supplier : works_with
+    Branch ||--o{ BranchInventory : stores
+    Part ||--o{ BranchInventory : is_stocked_as
+    BranchInventory ||--o{ StockMovement : records
+    User ||--o{ StockMovement : performs
 ```
 
 ---
@@ -41,6 +46,10 @@ erDiagram
 - **Estimate**: Proposed repair charges. Contains subtotal, tax, discount, and final calculated amounts.
 - **Invoice**: Final payment statements linked to repair tickets. Status ranges from UNPAID to PAID.
 - **AuditLog**: Immutable, append-only logs recording the actor, action, and JSON strings of changed values.
+- **Part**: Global catalogue of all raw parts and items (SKU, name, manufacturer).
+- **Supplier**: Branch-owned vendors from whom parts are purchased.
+- **BranchInventory**: Branch-specific stock levels for parts (on-hand, reserved, reorder levels).
+- **StockMovement**: Immutable double-entry ledger that tracks all deltas in inventory levels.
 
 ---
 

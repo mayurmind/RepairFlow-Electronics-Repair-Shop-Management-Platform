@@ -97,21 +97,21 @@ enum AttachmentCategory {
 }
 
 model Branch {
-  id           String       @id @default(uuid())
-  name         String
-  code         String       @unique
-  phone        String
-  email        String       @unique
-  addressLine1 String
-  addressLine2 String?
-  city         String
-  state        String
-  postalCode   String
-  country      String
-  isActive     Boolean      @default(true)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  userBranches            UserBranch[]
+  id                     String                  @id @default(uuid())
+  name                   String
+  code                   String                  @unique
+  phone                  String
+  email                  String                  @unique
+  addressLine1           String
+  addressLine2           String?
+  city                   String
+  state                  String
+  postalCode             String
+  country                String
+  isActive               Boolean                 @default(true)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  userBranches           UserBranch[]
   tickets                RepairTicket[]
   auditLogs              AuditLog[]
   customers              Customer[]
@@ -123,37 +123,37 @@ model Branch {
 }
 
 model User {
-  id                  String           @id @default(uuid())
-  fullName            String
-  email               String           @unique
-  phone               String?
-  passwordHash        String
-  role                UserRole
-  status              UserStatus       @default(ACTIVE)
-  lastLoginAt         DateTime?
-  failedLoginAttempts Int              @default(0)
-  lockedUntil         DateTime?
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
-  userBranches        UserBranch[]
-  refreshSessions     RefreshSession[]
-  resetTokens         PasswordResetToken[]
-  assignedTickets     RepairTicket[]   @relation("TechnicianRelation")
-  createdTickets      RepairTicket[]   @relation("CreatorRelation")
-  deliveredTickets    RepairTicket[]   @relation("DelivererRelation")
-  statusChanges       TicketStatusHistory[]
-  diagnoses           Diagnosis[]
-  estimatesCreated    Estimate[]
-  invoicesCreated     Invoice[]
-  paymentsReceived    PaymentRecord[]
-  attachmentsUploaded Attachment[]
-  auditLogs           AuditLog[]
-  notifications       Notification[]
-  technicianAssignments TechnicianAssignmentHistory[] @relation("TechnicianAssignment")
-  createdAssignments    TechnicianAssignmentHistory[] @relation("AssignmentCreator")
-  partsCreated              Part[]          @relation("PartCreator")
-  suppliersCreated          Supplier[]      @relation("SupplierCreator")
-  stockMovementsPerformed   StockMovement[] @relation("StockMovementActor")
+  id                      String                        @id @default(uuid())
+  fullName                String
+  email                   String                        @unique
+  phone                   String?
+  passwordHash            String
+  role                    UserRole
+  status                  UserStatus                    @default(ACTIVE)
+  lastLoginAt             DateTime?
+  failedLoginAttempts     Int                           @default(0)
+  lockedUntil             DateTime?
+  createdAt               DateTime                      @default(now())
+  updatedAt               DateTime                      @updatedAt
+  userBranches            UserBranch[]
+  refreshSessions         RefreshSession[]
+  resetTokens             PasswordResetToken[]
+  assignedTickets         RepairTicket[]                @relation("TechnicianRelation")
+  createdTickets          RepairTicket[]                @relation("CreatorRelation")
+  deliveredTickets        RepairTicket[]                @relation("DelivererRelation")
+  statusChanges           TicketStatusHistory[]
+  diagnoses               Diagnosis[]
+  estimatesCreated        Estimate[]
+  invoicesCreated         Invoice[]
+  paymentsReceived        PaymentRecord[]
+  attachmentsUploaded     Attachment[]
+  auditLogs               AuditLog[]
+  notifications           Notification[]
+  technicianAssignments   TechnicianAssignmentHistory[] @relation("TechnicianAssignment")
+  createdAssignments      TechnicianAssignmentHistory[] @relation("AssignmentCreator")
+  partsCreated            Part[]                        @relation("PartCreator")
+  suppliersCreated        Supplier[]                    @relation("SupplierCreator")
+  stockMovementsPerformed StockMovement[]               @relation("StockMovementActor")
 }
 
 model UserBranch {
@@ -168,16 +168,16 @@ model UserBranch {
 }
 
 model RefreshSession {
-  id                 String    @id @default(uuid())
-  userId             String
-  tokenHash          String    @unique
-  userAgent          String
-  ipAddress          String
-  expiresAt          DateTime
-  revokedAt          DateTime?
+  id                  String    @id @default(uuid())
+  userId              String
+  tokenHash           String    @unique
+  userAgent           String
+  ipAddress           String
+  expiresAt           DateTime
+  revokedAt           DateTime?
   replacedBySessionId String?
-  createdAt          DateTime  @default(now())
-  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt           DateTime  @default(now())
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PasswordResetToken {
@@ -239,15 +239,15 @@ model Device {
 }
 
 model RepairTicket {
-  id                   String       @id @default(uuid())
-  ticketNumber         String       @unique
+  id                   String         @id @default(uuid())
+  ticketNumber         String         @unique
   branchId             String
   customerId           String
   deviceId             String
   assignedTechnicianId String?
   createdById          String
   priority             TicketPriority @default(NORMAL)
-  status               TicketStatus @default(RECEIVED)
+  status               TicketStatus   @default(RECEIVED)
   reportedProblem      String
   existingDamage       String?
   conditionNotes       String?
@@ -262,15 +262,15 @@ model RepairTicket {
   deliveredAt          DateTime?
   deliveredById        String?
   deliveryNotes        String?
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
-  branch             Branch       @relation(fields: [branchId], references: [id])
-  customer           Customer     @relation(fields: [customerId], references: [id])
-  device             Device       @relation(fields: [deviceId], references: [id])
-  assignedTechnician User?        @relation("TechnicianRelation", fields: [assignedTechnicianId], references: [id])
-  createdBy          User         @relation("CreatorRelation", fields: [createdById], references: [id])
-  deliveredBy        User?        @relation("DelivererRelation", fields: [deliveredById], references: [id])
+  branch             Branch   @relation(fields: [branchId], references: [id])
+  customer           Customer @relation(fields: [customerId], references: [id])
+  device             Device   @relation(fields: [deviceId], references: [id])
+  assignedTechnician User?    @relation("TechnicianRelation", fields: [assignedTechnicianId], references: [id])
+  createdBy          User     @relation("CreatorRelation", fields: [createdById], references: [id])
+  deliveredBy        User?    @relation("DelivererRelation", fields: [deliveredById], references: [id])
 
   assignments   TechnicianAssignmentHistory[]
   statusHistory TicketStatusHistory[]
@@ -353,8 +353,8 @@ model Estimate {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  repairTicket RepairTicket   @relation(fields: [repairTicketId], references: [id], onDelete: Restrict)
-  createdBy    User           @relation(fields: [createdById], references: [id])
+  repairTicket RepairTicket       @relation(fields: [repairTicketId], references: [id], onDelete: Restrict)
+  createdBy    User               @relation(fields: [createdById], references: [id])
   items        EstimateItem[]
   decisions    EstimateDecision[]
 }
@@ -407,8 +407,8 @@ model Invoice {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  repairTicket RepairTicket  @relation(fields: [repairTicketId], references: [id], onDelete: Restrict)
-  createdBy    User          @relation(fields: [createdById], references: [id])
+  repairTicket RepairTicket    @relation(fields: [repairTicketId], references: [id], onDelete: Restrict)
+  createdBy    User            @relation(fields: [createdById], references: [id])
   items        InvoiceItem[]
   payments     PaymentRecord[]
 }
@@ -457,17 +457,17 @@ model Attachment {
 }
 
 model AuditLog {
-  id          String    @id @default(uuid())
+  id          String   @id @default(uuid())
   actorUserId String?
   branchId    String?
   action      String
   entityType  String
   entityId    String
-  oldValues   String?   @db.Text
-  newValues   String?   @db.Text
+  oldValues   String?  @db.Text
+  newValues   String?  @db.Text
   ipAddress   String?
   userAgent   String?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime @default(now())
 
   actor  User?   @relation(fields: [actorUserId], references: [id])
   branch Branch? @relation(fields: [branchId], references: [id])
@@ -532,7 +532,7 @@ model Part {
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 
-  createdBy         User              @relation("PartCreator", fields: [createdById], references: [id])
+  createdBy         User              @relation("PartCreator", fields: [createdById], references: [id], onDelete: Restrict)
   branchInventories BranchInventory[]
   stockMovements    StockMovement[]
 
@@ -557,8 +557,8 @@ model Supplier {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  branch    Branch @relation(fields: [branchId], references: [id])
-  createdBy User   @relation("SupplierCreator", fields: [createdById], references: [id])
+  branch    Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  createdBy User   @relation("SupplierCreator", fields: [createdById], references: [id], onDelete: Restrict)
 
   @@unique([branchId, supplierCode])
   @@unique([branchId, nameNormalized])
@@ -578,8 +578,8 @@ model BranchInventory {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  branch         Branch          @relation(fields: [branchId], references: [id])
-  part           Part            @relation(fields: [partId], references: [id])
+  branch         Branch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  part           Part            @relation(fields: [partId], references: [id], onDelete: Restrict)
   stockMovements StockMovement[]
 
   @@unique([branchId, partId])
@@ -588,29 +588,27 @@ model BranchInventory {
 }
 
 model StockMovement {
-  id                String            @id @default(uuid())
-  branchId          String
-  branchInventoryId String
-  partId            String
-  movementType      StockMovementType
-  onHandDelta       Int
-  reservedDelta     Int               @default(0)
-  onHandBefore      Int
-  onHandAfter       Int
-  reservedBefore    Int
-  reservedAfter     Int
-  sourceEntityType  String?
-  sourceEntityId    String?
-  reason            String?
-  actorUserId       String
-  createdAt         DateTime          @default(now())
+  id               String            @id @default(uuid())
+  branchId         String
+  partId           String
+  movementType     StockMovementType
+  onHandDelta      Int
+  reservedDelta    Int               @default(0)
+  onHandBefore     Int
+  onHandAfter      Int
+  reservedBefore   Int
+  reservedAfter    Int
+  sourceEntityType String?
+  sourceEntityId   String?
+  reason           String?
+  actorUserId      String
+  createdAt        DateTime          @default(now())
 
-  branch          Branch          @relation(fields: [branchId], references: [id])
-  branchInventory BranchInventory @relation(fields: [branchInventoryId], references: [id])
-  part            Part            @relation(fields: [partId], references: [id])
-  actor           User            @relation("StockMovementActor", fields: [actorUserId], references: [id])
+  branch          Branch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  branchInventory BranchInventory @relation(fields: [branchId, partId], references: [branchId, partId], onDelete: Restrict)
+  part            Part            @relation(fields: [partId], references: [id], onDelete: Restrict)
+  actor           User            @relation("StockMovementActor", fields: [actorUserId], references: [id], onDelete: Restrict)
 
-  @@index([branchInventoryId])
   @@index([branchId])
   @@index([partId])
   @@index([movementType])
@@ -623,8 +621,7 @@ model BranchSequenceCounter {
   value        Int                @default(0)
   updatedAt    DateTime           @updatedAt
 
-  branch Branch @relation(fields: [branchId], references: [id])
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
 
   @@id([branchId, sequenceType])
 }
-
