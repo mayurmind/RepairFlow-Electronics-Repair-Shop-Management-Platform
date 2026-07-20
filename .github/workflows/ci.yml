@@ -71,6 +71,7 @@ jobs:
     - name: Test API E2E
       env:
         DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/repairflow_test?schema=public
+        JWT_ACCESS_SECRET: ci_test_jwt_access_secret_for_e2e_tests_123456789
       run: pnpm --filter api test:e2e
 
     - name: Test Web
